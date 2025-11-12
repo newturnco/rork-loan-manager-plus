@@ -19,11 +19,22 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-  });
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+
+  const isGoogleAuthConfigured = !!(webClientId || iosClientId || androidClientId);
+
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest(
+    isGoogleAuthConfigured
+      ? {
+          webClientId,
+          iosClientId,
+          androidClientId,
+        }
+      : { webClientId: '' },
+    { disabled: !isGoogleAuthConfigured }
+  );
 
   const userQuery = useQuery({
     queryKey: ['user'],
@@ -89,12 +100,16 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   };
 
   const signInWithGoogle = useCallback(async () => {
+    if (!isGoogleAuthConfigured) {
+      throw new Error('Google authentication is not configured. Please contact support.');
+    }
     try {
       await googlePromptAsync();
     } catch (error) {
       console.error('Error signing in with Google:', error);
+      throw error;
     }
-  }, [googlePromptAsync]);
+  }, [googlePromptAsync, isGoogleAuthConfigured]);
 
   const signInWithApple = useCallback(async () => {
     try {
@@ -208,5 +223,6 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     signOut,
     updateLicense,
     isAppleAuthAvailable,
+    isGoogleAuthAvailable: isGoogleAuthConfigured,
   };
 });

@@ -17,7 +17,7 @@ import { Image } from 'expo-image';
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { signInWithEmail, signInWithGoogle, signInWithApple, isAppleAuthAvailable } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signInWithApple, isAppleAuthAvailable, isGoogleAuthAvailable } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,8 +55,8 @@ export default function SignInScreen() {
     try {
       await signInWithGoogle();
       router.replace('/');
-    } catch (error) {
-      Alert.alert('Error', 'Google sign in failed');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Google sign in failed');
     } finally {
       setIsLoading(false);
     }
@@ -156,23 +156,27 @@ export default function SignInScreen() {
             </Text>
           </TouchableOpacity>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
+          {(isGoogleAuthAvailable || isAppleAuthAvailable) && (
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+          )}
 
-          <TouchableOpacity
-            style={[styles.button, styles.socialButton]}
-            onPress={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            <Image
-              source="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-              style={styles.socialIcon}
-            />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
+          {isGoogleAuthAvailable && (
+            <TouchableOpacity
+              style={[styles.button, styles.socialButton]}
+              onPress={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              <Image
+                source="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                style={styles.socialIcon}
+              />
+              <Text style={styles.socialButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+          )}
 
           {isAppleAuthAvailable && (
             <TouchableOpacity
