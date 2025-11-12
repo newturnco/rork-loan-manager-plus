@@ -12,15 +12,15 @@ export interface Currency {
 }
 
 export const CURRENCIES: Currency[] = [
-  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  { code: 'AED', symbol: 'AED', name: 'UAE Dirham' },
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
   { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'SAR', symbol: 'ر.س', name: 'Saudi Riyal' },
-  { code: 'QAR', symbol: 'ر.ق', name: 'Qatari Riyal' },
-  { code: 'OMR', symbol: 'ر.ع.', name: 'Omani Rial' },
-  { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti Dinar' },
-  { code: 'BHD', symbol: 'د.ب', name: 'Bahraini Dinar' },
+  { code: 'SAR', symbol: 'SAR', name: 'Saudi Riyal' },
+  { code: 'QAR', symbol: 'QAR', name: 'Qatari Riyal' },
+  { code: 'OMR', symbol: 'OMR', name: 'Omani Rial' },
+  { code: 'KWD', symbol: 'KWD', name: 'Kuwaiti Dinar' },
+  { code: 'BHD', symbol: 'BHD', name: 'Bahraini Dinar' },
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
   { code: 'PKR', symbol: '₨', name: 'Pakistani Rupee' },
   { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
