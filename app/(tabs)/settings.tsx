@@ -11,24 +11,20 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Cloud, Download, Upload, Database, Calendar } from 'lucide-react-native';
+import { Stack } from 'expo-router';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
-import { useBackup } from '@/contexts/BackupContext';
 import Colors from '@/constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const { loans, installments, payments } = useLoans();
   const { settings, updateSettings } = useAlertSettings();
   const { currency, updateCurrency } = useCurrency();
-  const backup = useBackup();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-
 
   const handleClearData = () => {
     Alert.alert(
@@ -58,43 +54,6 @@ export default function SettingsScreen() {
     setShowCurrencyModal(false);
     Alert.alert('Success', `Currency changed to ${newCurrency.name}`);
   };
-
-
-
-  const handleExportBackup = async () => {
-    try {
-      const result = await backup.exportBackup();
-      Alert.alert('Success', `Backup exported successfully!\n${result}`);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to export backup');
-    }
-  };
-
-  const handleImportBackup = async () => {
-    Alert.alert(
-      'Import Backup',
-      'This will replace all current data with the backup. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Import',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await backup.importBackup();
-              Alert.alert('Success', 'Backup restored successfully!');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to restore backup');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-
-
-
 
   const SettingCard = ({
     icon,
@@ -276,77 +235,6 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Backup & Restore</Text>
-          
-          <View style={styles.settingsCard}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingLeft}>
-                <Database color={Colors.info} size={20} />
-                <View style={styles.settingText}>
-                  <Text style={styles.settingLabel}>Auto Backup</Text>
-                  <Text style={styles.settingDescription}>Automatic backup schedule</Text>
-                </View>
-              </View>
-              <Switch
-                value={backup.settings.autoBackupEnabled}
-                onValueChange={(value) => backup.updateSettings({ autoBackupEnabled: value })}
-                trackColor={{ false: Colors.border, true: Colors.primary + '50' }}
-                thumbColor={backup.settings.autoBackupEnabled ? Colors.primary : Colors.textSecondary}
-              />
-            </View>
-
-            {backup.settings.autoBackupEnabled && (
-              <View style={styles.settingRow}>
-                <View style={styles.settingLeft}>
-                  <Calendar color={Colors.info} size={20} />
-                  <View style={styles.settingText}>
-                    <Text style={styles.settingLabel}>Frequency</Text>
-                    <Text style={styles.settingDescription}>{backup.settings.autoBackupFrequency}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    const frequencies: Array<'daily' | 'weekly' | 'monthly'> = ['daily', 'weekly', 'monthly'];
-                    const currentIndex = frequencies.indexOf(backup.settings.autoBackupFrequency);
-                    const nextIndex = (currentIndex + 1) % frequencies.length;
-                    backup.updateSettings({ autoBackupFrequency: frequencies[nextIndex] });
-                  }}
-                >
-                  <ChevronRight color={Colors.textSecondary} size={20} />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {backup.settings.lastBackupDate && (
-              <View style={styles.settingRow}>
-                <View style={styles.settingLeft}>
-                  <View style={styles.settingText}>
-                    <Text style={styles.settingLabel}>Last Backup</Text>
-                    <Text style={styles.settingDescription}>
-                      {new Date(backup.settings.lastBackupDate).toLocaleDateString()}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-          </View>
-
-          <SettingCard
-            icon={<Download color={Colors.success} size={24} />}
-            title="Export Backup"
-            subtitle="Save backup to file"
-            onPress={handleExportBackup}
-          />
-          
-          <SettingCard
-            icon={<Upload color={Colors.warning} size={24} />}
-            title="Import Backup"
-            subtitle="Restore data from file"
-            onPress={handleImportBackup}
-          />
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
           <SettingCard
             icon={<MessageCircle color={Colors.success} size={24} />}
@@ -407,8 +295,6 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
-
-
     </View>
   );
 }
@@ -648,43 +534,5 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700' as const,
     color: Colors.primary,
-  },
-  connectText: {
-    color: Colors.primary,
-    fontWeight: '600' as const,
-    fontSize: 14,
-  },
-  disconnectText: {
-    color: Colors.error,
-    fontWeight: '600' as const,
-    fontSize: 14,
-  },
-  modalDescription: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  input: {
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: Colors.text,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 16,
-  },
-  connectButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  connectButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700' as const,
   },
 });

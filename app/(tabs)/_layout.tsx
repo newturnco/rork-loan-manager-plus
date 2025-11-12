@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { LayoutDashboard, Wallet, FileText, Settings, Users, Calculator, Receipt } from "lucide-react-native";
+import { LayoutDashboard, Wallet, FileText, Settings, Users, Calculator } from "lucide-react-native";
 import React from "react";
 import Colors from "@/constants/colors";
 
@@ -36,13 +36,6 @@ export default function TabLayout() {
         options={{
           title: "Loans",
           tabBarIcon: ({ color, size }) => <Wallet color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="payments"
-        options={{
-          title: "Payments",
-          tabBarIcon: ({ color, size }) => <Receipt color={color} size={size} />,
         }}
       />
       <Tabs.Screen

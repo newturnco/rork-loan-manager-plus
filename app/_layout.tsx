@@ -7,7 +7,7 @@ import { LoanProvider } from "@/contexts/LoanContext";
 import { CustomerProvider } from "@/contexts/CustomerContext";
 import { AlertSettingsProvider } from "@/contexts/AlertSettingsContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import { BackupProvider } from "@/contexts/BackupContext";
+import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,13 +22,6 @@ function RootLayoutNav() {
         options={{ 
           presentation: "modal",
           title: "New Loan"
-        }} 
-      />
-      <Stack.Screen 
-        name="edit-loan" 
-        options={{ 
-          presentation: "modal",
-          title: "Edit Loan"
         }} 
       />
       <Stack.Screen 
@@ -69,20 +62,20 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <CurrencyProvider>
-        <AlertSettingsProvider>
-          <CustomerProvider>
-            <LoanProvider>
-              <BackupProvider>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <CurrencyProvider>
+          <AlertSettingsProvider>
+            <CustomerProvider>
+              <LoanProvider>
                 <GestureHandlerRootView>
                   <RootLayoutNav />
                 </GestureHandlerRootView>
-              </BackupProvider>
-            </LoanProvider>
-          </CustomerProvider>
-        </AlertSettingsProvider>
-      </CurrencyProvider>
-    </QueryClientProvider>
+              </LoanProvider>
+            </CustomerProvider>
+          </AlertSettingsProvider>
+        </CurrencyProvider>
+      </QueryClientProvider>
+    </trpc.Provider>
   );
 }
