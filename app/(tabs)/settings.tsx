@@ -12,12 +12,15 @@ import {
   Modal,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight } from 'lucide-react-native';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
 import Colors from '@/constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 
 export default function SettingsScreen() {
   const { loans, installments, payments } = useLoans();
@@ -25,6 +28,115 @@ export default function SettingsScreen() {
   const { currency, updateCurrency } = useCurrency();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+
+  const handleBackup = async () => {
+    try {
+      const loans = await AsyncStorage.getItem('@loans');
+      const installments = await AsyncStorage.getItem('@installments');
+      const payments = await AsyncStorage.getItem('@payments');
+      const customers = await AsyncStorage.getItem('@customers');
+      const currencyData = await AsyncStorage.getItem('@currency');
+      const alertSettings = await AsyncStorage.getItem('@alertSettings');
+
+      const backup = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        data: {
+          loans: loans ? JSON.parse(loans) : [],
+          installments: installments ? JSON.parse(installments) : [],
+          payments: payments ? JSON.parse(payments) : [],
+          customers: customers ? JSON.parse(customers) : [],
+          currency: currencyData ? JSON.parse(currencyData) : null,
+          alertSettings: alertSettings ? JSON.parse(alertSettings) : null,
+        },
+      };
+
+      const fileName = `LendTrack_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backup, null, 2));
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'application/json',
+          dialogTitle: 'Save Backup File',
+          UTI: 'public.json',
+        });
+        Alert.alert('Success', 'Backup created successfully!');
+      } else {
+        Alert.alert('Success', `Backup saved to: ${fileUri}`);
+      }
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      Alert.alert('Error', 'Failed to create backup');
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      const backup = JSON.parse(fileContent);
+
+      if (!backup.version || !backup.data) {
+        Alert.alert('Error', 'Invalid backup file format');
+        return;
+      }
+
+      Alert.alert(
+        'Restore Backup',
+        `This will restore data from ${new Date(backup.timestamp).toLocaleDateString()}. All current data will be replaced. Continue?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Restore',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                if (backup.data.loans) {
+                  await AsyncStorage.setItem('@loans', JSON.stringify(backup.data.loans));
+                }
+                if (backup.data.installments) {
+                  await AsyncStorage.setItem('@installments', JSON.stringify(backup.data.installments));
+                }
+                if (backup.data.payments) {
+                  await AsyncStorage.setItem('@payments', JSON.stringify(backup.data.payments));
+                }
+                if (backup.data.customers) {
+                  await AsyncStorage.setItem('@customers', JSON.stringify(backup.data.customers));
+                }
+                if (backup.data.currency) {
+                  await AsyncStorage.setItem('@currency', JSON.stringify(backup.data.currency));
+                }
+                if (backup.data.alertSettings) {
+                  await AsyncStorage.setItem('@alertSettings', JSON.stringify(backup.data.alertSettings));
+                }
+
+                Alert.alert('Success', 'Data restored successfully! Please restart the app.', [
+                  { text: 'OK' },
+                ]);
+              } catch (error) {
+                console.error('Error restoring backup:', error);
+                Alert.alert('Error', 'Failed to restore backup');
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error reading backup file:', error);
+      Alert.alert('Error', 'Failed to read backup file');
+    }
+  };
 
   const handleClearData = () => {
     Alert.alert(
@@ -231,6 +343,22 @@ export default function SettingsScreen() {
                 'For help and support:\n\n• Check out the app features in each tab\n• Use the WhatsApp notification feature to send payment reminders\n• Export reports for detailed analytics\n\nContact: support@lendtrack.com'
               );
             }}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Data Management</Text>
+          <SettingCard
+            icon={<Download color={Colors.info} size={24} />}
+            title="Backup Data"
+            subtitle="Export all data to a file"
+            onPress={handleBackup}
+          />
+          <SettingCard
+            icon={<Upload color={Colors.secondary} size={24} />}
+            title="Restore Data"
+            subtitle="Import data from backup file"
+            onPress={handleRestore}
           />
         </View>
 

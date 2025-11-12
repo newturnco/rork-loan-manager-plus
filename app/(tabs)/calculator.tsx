@@ -13,7 +13,7 @@ import {
 import { Stack } from 'expo-router';
 import { ArrowRightLeft, RefreshCw, DollarSign, TrendingUp } from 'lucide-react-native';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
-import { trpc } from '@/lib/trpc';
+
 import Colors from '@/constants/colors';
 
 export default function CalculatorScreen() {
@@ -25,18 +25,9 @@ export default function CalculatorScreen() {
   const [showFromModal, setShowFromModal] = useState(false);
   const [showToModal, setShowToModal] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
-  const [shouldConvert, setShouldConvert] = useState(false);
-
-  const convertQuery = trpc.currency.convertCurrency.useQuery(
-    {
-      amount: parseFloat(amount) || 0,
-      fromCurrency: fromCurrency.code,
-      toCurrency: toCurrency.code,
-    },
-    {
-      enabled: shouldConvert && !!amount && parseFloat(amount) > 0,
-    }
-  );
+  const [convertedAmount, setConvertedAmount] = useState<number | null>(null);
+  const [conversionRate, setConversionRate] = useState<number | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   useEffect(() => {
     if (exchangeRates) {
@@ -48,14 +39,28 @@ export default function CalculatorScreen() {
     if (!amount || parseFloat(amount) <= 0) {
       return;
     }
-    setShouldConvert(true);
+    setIsConverting(true);
+    
+    const amountValue = parseFloat(amount);
+    if (exchangeRates && exchangeRates.rates) {
+      const fromRate = exchangeRates.rates[fromCurrency.code] || 1;
+      const toRate = exchangeRates.rates[toCurrency.code] || 1;
+      const rate = toRate / fromRate;
+      const converted = amountValue * rate;
+      
+      setConversionRate(rate);
+      setConvertedAmount(converted);
+    }
+    
+    setIsConverting(false);
   };
 
   const handleSwapCurrencies = () => {
     const temp = fromCurrency;
     setFromCurrency(toCurrency);
     setToCurrency(temp);
-    setShouldConvert(false);
+    setConvertedAmount(null);
+    setConversionRate(null);
   };
 
   const CurrencyModal = ({
@@ -146,7 +151,8 @@ export default function CalculatorScreen() {
               value={amount}
               onChangeText={(text) => {
                 setAmount(text);
-                setShouldConvert(false);
+                setConvertedAmount(null);
+                setConversionRate(null);
               }}
               keyboardType="decimal-pad"
             />
@@ -188,9 +194,9 @@ export default function CalculatorScreen() {
         <TouchableOpacity
           style={[styles.convertButton, (!amount || parseFloat(amount) <= 0) && styles.convertButtonDisabled]}
           onPress={handleConvert}
-          disabled={!amount || parseFloat(amount) <= 0 || convertQuery.isLoading}
+          disabled={!amount || parseFloat(amount) <= 0 || isConverting}
         >
-          {convertQuery.isLoading ? (
+          {isConverting ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
@@ -200,15 +206,13 @@ export default function CalculatorScreen() {
           )}
         </TouchableOpacity>
 
-        {convertQuery.data && shouldConvert && (
+        {convertedAmount !== null && conversionRate !== null && (
           <View style={styles.resultCard}>
             <View style={styles.resultHeader}>
               <Text style={styles.resultLabel}>Converted Amount</Text>
-              {convertQuery.data.rate && (
-                <Text style={styles.rateText}>
-                  1 {fromCurrency.code} = {convertQuery.data.rate.toFixed(4)} {toCurrency.code}
-                </Text>
-              )}
+              <Text style={styles.rateText}>
+                1 {fromCurrency.code} = {conversionRate.toFixed(4)} {toCurrency.code}
+              </Text>
             </View>
             <View style={styles.resultRow}>
               <View style={styles.resultAmount}>
@@ -220,7 +224,7 @@ export default function CalculatorScreen() {
               <ArrowRightLeft color={Colors.textSecondary} size={20} />
               <View style={styles.resultAmount}>
                 <Text style={[styles.resultAmountText, styles.resultAmountHighlight]}>
-                  {toCurrency.symbol} {convertQuery.data.convertedAmount.toFixed(2)}
+                  {toCurrency.symbol} {convertedAmount.toFixed(2)}
                 </Text>
                 <Text style={styles.resultCurrency}>{toCurrency.code}</Text>
               </View>

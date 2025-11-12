@@ -9,115 +9,103 @@ import {
   Alert,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Search, Plus, Trash2, DollarSign } from 'lucide-react-native';
+import { Search, Plus, DollarSign, Calendar, Trash2 } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
-import { useCustomers } from '@/contexts/CustomerContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
+import { Payment } from '@/types/loan';
 
 export default function PaymentsScreen() {
   const router = useRouter();
-  const { payments, installments, deletePayment, getLoanById } = useLoans();
-  const { getCustomerById } = useCustomers();
+  const { payments, loans, installments, deletePayment } = useLoans();
   const { currency } = useCurrency();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const allPayments = [...payments].sort(
-    (a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
-  );
-
-  const filteredPayments = allPayments.filter((payment) => {
-    const loan = getLoanById(payment.loanId);
-    if (!loan) return false;
-    const customer = getCustomerById(loan.customerId || '');
-    const matchesSearch =
-      loan.borrowerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredPayments = payments.filter((payment) => {
+    const loan = loans.find((l) => l.id === payment.loanId);
+    const matchesSearch = loan?.borrowerName
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
-  const handleDeletePayment = (paymentId: string, borrowerName: string) => {
+  const sortedPayments = [...filteredPayments].sort(
+    (a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
+  );
+
+  const handleDeletePayment = (payment: Payment) => {
     Alert.alert(
       'Delete Payment',
-      `Are you sure you want to delete this payment for ${borrowerName}?`,
+      'Are you sure you want to delete this payment entry?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deletePayment(paymentId),
+          onPress: () => deletePayment(payment.id),
         },
       ]
     );
   };
 
-  const PaymentCard = ({ payment }: { payment: any }) => {
-    const loan = getLoanById(payment.loanId);
+  const PaymentCard = ({ payment }: { payment: Payment }) => {
+    const loan = loans.find((l) => l.id === payment.loanId);
     const installment = installments.find((i) => i.id === payment.installmentId);
-    
-    if (!loan) return null;
 
     return (
       <View style={styles.paymentCard}>
         <View style={styles.paymentHeader}>
-          <View style={styles.paymentInfo}>
-            <View style={styles.iconContainer}>
+          <View style={styles.headerLeft}>
+            <View style={[styles.iconContainer, { backgroundColor: Colors.success + '15' }]}>
               <DollarSign color={Colors.success} size={20} />
             </View>
-            <View style={styles.paymentDetails}>
-              <Text style={styles.borrowerName}>{loan.borrowerName}</Text>
-              <Text style={styles.paymentDate}>{formatDate(payment.paymentDate)}</Text>
+            <View style={styles.paymentInfo}>
+              <Text style={styles.borrowerName}>{loan?.borrowerName || 'Unknown'}</Text>
+              <Text style={styles.installmentText}>
+                Installment #{installment?.installmentNumber || 'N/A'}
+              </Text>
             </View>
           </View>
           <TouchableOpacity
-            onPress={() => handleDeletePayment(payment.id, loan.borrowerName)}
             style={styles.deleteButton}
+            onPress={() => handleDeletePayment(payment)}
           >
             <Trash2 color={Colors.error} size={20} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.amountSection}>
-          <View style={styles.amountRow}>
-            <Text style={styles.label}>Total Payment</Text>
-            <Text style={styles.totalAmount}>
-              {formatCurrency(payment.amount, currency.code, currency.symbol)}
+        <View style={styles.amountContainer}>
+          <Text style={styles.amountLabel}>Payment Amount</Text>
+          <Text style={styles.amount}>{formatCurrency(payment.amount, currency.code, currency.symbol)}</Text>
+        </View>
+
+        <View style={styles.breakdown}>
+          <View style={styles.breakdownRow}>
+            <Text style={styles.breakdownLabel}>Principal</Text>
+            <Text style={styles.breakdownValue}>
+              {formatCurrency(payment.principalAmount, currency.code, currency.symbol)}
             </Text>
           </View>
           <View style={styles.breakdownRow}>
-            <View style={styles.breakdownItem}>
-              <Text style={styles.breakdownLabel}>Principal</Text>
-              <Text style={styles.breakdownValue}>
-                {formatCurrency(payment.principalAmount, currency.code, currency.symbol)}
-              </Text>
-            </View>
-            <View style={styles.breakdownItem}>
-              <Text style={styles.breakdownLabel}>Interest</Text>
-              <Text style={styles.breakdownValue}>
-                {formatCurrency(payment.interestAmount, currency.code, currency.symbol)}
-              </Text>
-            </View>
+            <Text style={styles.breakdownLabel}>Interest</Text>
+            <Text style={[styles.breakdownValue, { color: Colors.success }]}>
+              {formatCurrency(payment.interestAmount, currency.code, currency.symbol)}
+            </Text>
           </View>
         </View>
 
-        {installment && (
-          <View style={styles.metaSection}>
-            <Text style={styles.metaText}>
-              Installment #{installment.installmentNumber}
-            </Text>
-            <Text style={styles.metaText}>
-              Due: {formatDate(installment.dueDate)}
-            </Text>
+        <View style={styles.footer}>
+          <View style={styles.dateContainer}>
+            <Calendar color={Colors.textSecondary} size={14} />
+            <Text style={styles.dateText}>{formatDate(payment.paymentDate)}</Text>
           </View>
-        )}
-
-        {payment.notes && (
-          <View style={styles.notesSection}>
-            <Text style={styles.notesLabel}>Notes:</Text>
-            <Text style={styles.notesText}>{payment.notes}</Text>
-          </View>
-        )}
+          {payment.notes && (
+            <Text style={styles.notes} numberOfLines={1}>
+              {payment.notes}
+            </Text>
+          )}
+        </View>
       </View>
     );
   };
@@ -127,14 +115,14 @@ export default function PaymentsScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Payment Entries',
+          title: 'Payment History',
           headerStyle: {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push('/add-payment')}
+              onPress={() => router.push('/add-loan')}
               style={styles.headerButton}
             >
               <Plus color="#FFFFFF" size={24} />
@@ -148,7 +136,7 @@ export default function PaymentsScreen() {
           <Search color={Colors.textSecondary} size={20} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by borrower..."
+            placeholder="Search payments..."
             placeholderTextColor={Colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -156,14 +144,14 @@ export default function PaymentsScreen() {
         </View>
       </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Total Payments</Text>
-          <Text style={styles.statValue}>{payments.length}</Text>
+      <View style={styles.summaryContainer}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Total Payments</Text>
+          <Text style={styles.summaryValue}>{payments.length}</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Total Collected</Text>
-          <Text style={[styles.statValue, { color: Colors.success }]}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Total Amount</Text>
+          <Text style={[styles.summaryValue, { color: Colors.success }]}>
             {formatCurrency(
               payments.reduce((sum, p) => sum + p.amount, 0),
               currency.code,
@@ -177,7 +165,7 @@ export default function PaymentsScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        {filteredPayments.length === 0 ? (
+        {sortedPayments.length === 0 ? (
           <View style={styles.emptyState}>
             <DollarSign color={Colors.textSecondary} size={64} />
             <Text style={styles.emptyTitle}>
@@ -186,13 +174,11 @@ export default function PaymentsScreen() {
             <Text style={styles.emptyText}>
               {searchQuery
                 ? 'Try adjusting your search'
-                : 'Record your first payment to get started'}
+                : 'Payment history will appear here'}
             </Text>
           </View>
         ) : (
-          filteredPayments.map((payment) => (
-            <PaymentCard key={payment.id} payment={payment} />
-          ))
+          sortedPayments.map((payment) => <PaymentCard key={payment.id} payment={payment} />)
         )}
       </ScrollView>
     </View>
@@ -228,7 +214,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
   },
-  statsContainer: {
+  summaryContainer: {
     flexDirection: 'row',
     padding: 16,
     gap: 12,
@@ -236,20 +222,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  statCard: {
+  summaryCard: {
     flex: 1,
     backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
-  statLabel: {
+  summaryLabel: {
     fontSize: 12,
     color: Colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: 6,
     fontWeight: '500' as const,
   },
-  statValue: {
+  summaryValue: {
     fontSize: 20,
     fontWeight: '700' as const,
     color: Colors.primary,
@@ -271,8 +257,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.success,
   },
   paymentHeader: {
     flexDirection: 'row',
@@ -280,7 +264,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  paymentInfo: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -290,96 +274,78 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.success + '15',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  paymentDetails: {
+  paymentInfo: {
     flex: 1,
   },
   borrowerName: {
     fontSize: 16,
-    fontWeight: '700' as const,
+    fontWeight: '600' as const,
     color: Colors.text,
     marginBottom: 2,
   },
-  paymentDate: {
+  installmentText: {
     fontSize: 13,
     color: Colors.textSecondary,
   },
   deleteButton: {
     padding: 8,
   },
-  amountSection: {
+  amountContainer: {
     marginBottom: 12,
   },
-  amountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  label: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    fontWeight: '500' as const,
-  },
-  totalAmount: {
-    fontSize: 22,
-    fontWeight: '700' as const,
-    color: Colors.success,
-  },
-  breakdownRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  breakdownItem: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    padding: 12,
-  },
-  breakdownLabel: {
+  amountLabel: {
     fontSize: 12,
     color: Colors.textSecondary,
     marginBottom: 4,
   },
-  breakdownValue: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: Colors.text,
+  amount: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: Colors.success,
   },
-  metaSection: {
+  breakdown: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  metaText: {
+  breakdownLabel: {
     fontSize: 13,
     color: Colors.textSecondary,
-    fontWeight: '500' as const,
   },
-  notesSection: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  notesLabel: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '600' as const,
-    marginBottom: 4,
-  },
-  notesText: {
+  breakdownValue: {
     fontSize: 14,
+    fontWeight: '600' as const,
     color: Colors.text,
-    lineHeight: 20,
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 12,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  dateText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  notes: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontStyle: 'italic' as const,
   },
   emptyState: {
     alignItems: 'center',
