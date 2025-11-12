@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
-import GoogleDriveService, { BackupData } from '@/services/GoogleDriveService';
+import LocalBackupService from '@/services/LocalBackupService';
 import { Platform } from 'react-native';
 
 const BACKUP_SETTINGS_KEY = '@backup_settings';
@@ -12,20 +12,17 @@ export interface BackupSettings {
   autoBackupEnabled: boolean;
   autoBackupFrequency: 'daily' | 'weekly' | 'monthly';
   lastBackupDate: string | null;
-  googleDriveEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: BackupSettings = {
   autoBackupEnabled: false,
   autoBackupFrequency: 'weekly',
   lastBackupDate: null,
-  googleDriveEnabled: false,
 };
 
 export const [BackupProvider, useBackup] = createContextHook(() => {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<BackupSettings>(DEFAULT_SETTINGS);
-  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
 
   const settingsQuery = useQuery({
     queryKey: ['backup-settings'],
@@ -51,95 +48,33 @@ export const [BackupProvider, useBackup] = createContextHook(() => {
     },
   });
 
+  const { mutate: saveSettings } = saveSettingsMutation;
+
   const updateSettings = useCallback((updates: Partial<BackupSettings>) => {
     const newSettings = { ...settings, ...updates };
     setSettings(newSettings);
-    saveSettingsMutation.mutate(newSettings);
-  }, [settings]);
-
-  const createManualBackupMutation = useMutation({
-    mutationFn: async () => {
-      const backup = await GoogleDriveService.createBackup();
-      
-      if (settings.googleDriveEnabled) {
-        const success = await GoogleDriveService.uploadBackup(backup);
-        if (!success) {
-          throw new Error('Failed to upload backup to Google Drive');
-        }
-      }
-
-      updateSettings({ lastBackupDate: new Date().toISOString() });
-      return backup;
-    },
-  });
+    saveSettings(newSettings);
+  }, [settings, saveSettings]);
 
   const exportBackupMutation = useMutation({
     mutationFn: async () => {
-      const result = await GoogleDriveService.exportBackupToFile();
+      const result = await LocalBackupService.exportBackupToFile();
       if (!result) {
         throw new Error('Failed to export backup');
       }
+      updateSettings({ lastBackupDate: new Date().toISOString() });
       return result;
     },
   });
 
   const importBackupMutation = useMutation({
     mutationFn: async () => {
-      const backup = await GoogleDriveService.importBackupFromFile();
+      const backup = await LocalBackupService.importBackupFromFile();
       if (!backup) {
-        throw new Error('Failed to import backup');
+        throw new Error('Failed to import backup or user cancelled');
       }
       
-      const success = await GoogleDriveService.restoreBackup(backup);
-      if (!success) {
-        throw new Error('Failed to restore backup');
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['loans'] });
-      queryClient.invalidateQueries({ queryKey: ['installments'] });
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-
-      return backup;
-    },
-  });
-
-  const authenticateGoogleDrive = useCallback(async (clientId: string, clientSecret?: string) => {
-    setIsAuthenticating(true);
-    try {
-      await GoogleDriveService.init(clientId, clientSecret);
-      const success = await GoogleDriveService.authenticate();
-      
-      if (success) {
-        updateSettings({ googleDriveEnabled: true });
-      }
-      
-      return success;
-    } catch (error) {
-      console.error('Google Drive authentication error:', error);
-      return false;
-    } finally {
-      setIsAuthenticating(false);
-    }
-  }, []);
-
-  const disconnectGoogleDrive = useCallback(async () => {
-    await GoogleDriveService.logout();
-    updateSettings({ googleDriveEnabled: false });
-  }, []);
-
-  const listGoogleDriveBackups = useCallback(async () => {
-    return await GoogleDriveService.listBackups();
-  }, []);
-
-  const restoreFromGoogleDrive = useMutation({
-    mutationFn: async (fileId: string) => {
-      const backup = await GoogleDriveService.downloadBackup(fileId);
-      if (!backup) {
-        throw new Error('Failed to download backup');
-      }
-
-      const success = await GoogleDriveService.restoreBackup(backup);
+      const success = await LocalBackupService.restoreBackup(backup);
       if (!success) {
         throw new Error('Failed to restore backup');
       }
@@ -211,22 +146,14 @@ export const [BackupProvider, useBackup] = createContextHook(() => {
 
   useEffect(() => {
     scheduleAutoBackup();
-  }, [settings.autoBackupEnabled, settings.autoBackupFrequency]);
+  }, [scheduleAutoBackup]);
 
   return {
     settings,
     updateSettings,
-    createManualBackup: createManualBackupMutation.mutateAsync,
-    isCreatingBackup: createManualBackupMutation.isPending,
     exportBackup: exportBackupMutation.mutateAsync,
     isExportingBackup: exportBackupMutation.isPending,
     importBackup: importBackupMutation.mutateAsync,
     isImportingBackup: importBackupMutation.isPending,
-    authenticateGoogleDrive,
-    disconnectGoogleDrive,
-    isAuthenticating,
-    listGoogleDriveBackups,
-    restoreFromGoogleDrive: restoreFromGoogleDrive.mutateAsync,
-    isRestoringBackup: restoreFromGoogleDrive.isPending,
   };
 });

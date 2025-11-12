@@ -28,8 +28,7 @@ export default function SettingsScreen() {
   const backup = useBackup();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-  const [showGoogleDriveSetup, setShowGoogleDriveSetup] = useState(false);
-  const [googleClientId, setGoogleClientId] = useState('');
+
 
   const handleClearData = () => {
     Alert.alert(
@@ -60,14 +59,7 @@ export default function SettingsScreen() {
     Alert.alert('Success', `Currency changed to ${newCurrency.name}`);
   };
 
-  const handleManualBackup = async () => {
-    try {
-      await backup.createManualBackup();
-      Alert.alert('Success', 'Backup created successfully!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create backup');
-    }
-  };
+
 
   const handleExportBackup = async () => {
     try {
@@ -100,20 +92,7 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleGoogleDriveAuth = async () => {
-    if (!googleClientId) {
-      Alert.alert('Error', 'Please enter Google Client ID');
-      return;
-    }
 
-    const success = await backup.authenticateGoogleDrive(googleClientId);
-    if (success) {
-      setShowGoogleDriveSetup(false);
-      Alert.alert('Success', 'Google Drive connected successfully!');
-    } else {
-      Alert.alert('Error', 'Failed to connect to Google Drive');
-    }
-  };
 
 
 
@@ -338,40 +317,20 @@ export default function SettingsScreen() {
               </View>
             )}
 
-            <View style={styles.settingRow}>
-              <View style={styles.settingLeft}>
-                <Cloud color={Colors.success} size={20} />
-                <View style={styles.settingText}>
-                  <Text style={styles.settingLabel}>Google Drive Backup</Text>
-                  <Text style={styles.settingDescription}>
-                    {backup.settings.googleDriveEnabled ? 'Connected' : 'Not connected'}
-                  </Text>
+            {backup.settings.lastBackupDate && (
+              <View style={styles.settingRow}>
+                <View style={styles.settingLeft}>
+                  <View style={styles.settingText}>
+                    <Text style={styles.settingLabel}>Last Backup</Text>
+                    <Text style={styles.settingDescription}>
+                      {new Date(backup.settings.lastBackupDate).toLocaleDateString()}
+                    </Text>
+                  </View>
                 </View>
               </View>
-              {backup.settings.googleDriveEnabled ? (
-                <TouchableOpacity
-                  onPress={async () => {
-                    await backup.disconnectGoogleDrive();
-                    Alert.alert('Success', 'Google Drive disconnected');
-                  }}
-                >
-                  <Text style={styles.disconnectText}>Disconnect</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity onPress={() => setShowGoogleDriveSetup(true)}>
-                  <Text style={styles.connectText}>Connect</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            )}
           </View>
 
-          <SettingCard
-            icon={<Upload color={Colors.info} size={24} />}
-            title="Create Backup"
-            subtitle="Backup all data manually"
-            onPress={handleManualBackup}
-          />
-          
           <SettingCard
             icon={<Download color={Colors.success} size={24} />}
             title="Export Backup"
@@ -449,45 +408,7 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      <Modal
-        visible={showGoogleDriveSetup}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowGoogleDriveSetup(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Connect Google Drive</Text>
-              <TouchableOpacity onPress={() => setShowGoogleDriveSetup(false)}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <Text style={styles.modalDescription}>
-              To enable Google Drive backup, you need to provide your Google Cloud OAuth Client ID.
-            </Text>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Google Client ID"
-              value={googleClientId}
-              onChangeText={setGoogleClientId}
-              autoCapitalize="none"
-            />
-            
-            <TouchableOpacity
-              style={styles.connectButton}
-              onPress={handleGoogleDriveAuth}
-              disabled={backup.isAuthenticating}
-            >
-              <Text style={styles.connectButtonText}>
-                {backup.isAuthenticating ? 'Connecting...' : 'Connect'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+
     </View>
   );
 }
