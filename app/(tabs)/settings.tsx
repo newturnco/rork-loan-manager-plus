@@ -18,7 +18,7 @@ import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
 import Colors from '@/constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -52,20 +52,19 @@ export default function SettingsScreen() {
       };
 
       const fileName = `LendTrack_Backup_${new Date().toISOString().split('T')[0]}.json`;
-      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-
-      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backup, null, 2));
+      const file = new File(Paths.document, fileName);
+      await file.write(JSON.stringify(backup, null, 2));
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
-        await Sharing.shareAsync(fileUri, {
+        await Sharing.shareAsync(file.uri, {
           mimeType: 'application/json',
           dialogTitle: 'Save Backup File',
           UTI: 'public.json',
         });
         Alert.alert('Success', 'Backup created successfully!');
       } else {
-        Alert.alert('Success', `Backup saved to: ${fileUri}`);
+        Alert.alert('Success', `Backup saved to: ${file.uri}`);
       }
     } catch (error) {
       console.error('Error creating backup:', error);
@@ -84,7 +83,8 @@ export default function SettingsScreen() {
         return;
       }
 
-      const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      const file = new File(result.assets[0].uri);
+      const fileContent = await file.text();
       const backup = JSON.parse(fileContent);
 
       if (!backup.version || !backup.data) {
