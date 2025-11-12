@@ -15,6 +15,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Save, Calendar, DollarSign, User, Plus, ChevronDown } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCustomers } from '@/contexts/CustomerContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import Colors from '@/constants/colors';
 import { Loan, InterestType, InstallmentFrequency } from '@/types/loan';
 import { calculateInterestRate, calculateInterestAmount, calculateDurationInMonths, formatDateToISO, parseDateDDMMYYYY } from '@/utils/calculations';
@@ -23,6 +24,7 @@ export default function AddLoanScreen() {
   const router = useRouter();
   const { addLoan } = useLoans();
   const { customers } = useCustomers();
+  const { currency } = useCurrency();
 
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -163,6 +165,7 @@ export default function AddLoanScreen() {
       status: 'active',
       notes: notes.trim(),
       createdAt: new Date().toISOString(),
+      currency: currency.code,
     };
 
     addLoan(loan);

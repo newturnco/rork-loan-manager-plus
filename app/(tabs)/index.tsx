@@ -100,13 +100,13 @@ export default function DashboardScreen() {
             icon={<TrendingUp color={Colors.primary} size={20} />}
           />
           <StatCard
-            label="Outstanding"
+            label="Total Outstanding"
             value={formatCurrency(dashboardStats.totalOutstanding, currency.code, currency.symbol)}
             color={Colors.warning}
             icon={<Clock color={Colors.warning} size={20} />}
           />
           <StatCard
-            label="Received"
+            label="Total Received"
             value={formatCurrency(dashboardStats.totalAmountReceived, currency.code, currency.symbol)}
             color={Colors.success}
             icon={<CheckCircle color={Colors.success} size={20} />}
@@ -117,6 +117,24 @@ export default function DashboardScreen() {
             color={Colors.secondary}
             icon={<DollarSign color={Colors.secondary} size={20} />}
           />
+        </View>
+
+        <View style={styles.principalTrackingSection}>
+          <Text style={styles.sectionTitle}>Principal Tracking</Text>
+          <View style={styles.principalGrid}>
+            <View style={styles.principalCard}>
+              <Text style={styles.principalLabel}>Principal Received</Text>
+              <Text style={[styles.principalValue, { color: Colors.success }]}>
+                {formatCurrency(dashboardStats.totalPrincipalReceived, currency.code, currency.symbol)}
+              </Text>
+            </View>
+            <View style={styles.principalCard}>
+              <Text style={styles.principalLabel}>Principal Outstanding</Text>
+              <Text style={[styles.principalValue, { color: Colors.warning }]}>
+                {formatCurrency(dashboardStats.totalPrincipalOutstanding, currency.code, currency.symbol)}
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -435,5 +453,33 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600' as const,
+  },
+  principalTrackingSection: {
+    marginBottom: 24,
+  },
+  principalGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  principalCard: {
+    flex: 1,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  principalLabel: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: 8,
+    fontWeight: '500' as const,
+  },
+  principalValue: {
+    fontSize: 22,
+    fontWeight: '700' as const,
   },
 });

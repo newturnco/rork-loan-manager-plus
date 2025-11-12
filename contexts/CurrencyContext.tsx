@@ -2,6 +2,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
+import { trpc } from '@/lib/trpc';
 
 const CURRENCY_KEY = '@currency';
 
@@ -9,6 +10,12 @@ export interface Currency {
   code: string;
   symbol: string;
   name: string;
+}
+
+export interface ExchangeRates {
+  base: string;
+  date: string;
+  rates: Record<string, number>;
 }
 
 export const CURRENCIES: Currency[] = [
@@ -60,14 +67,73 @@ export const [CurrencyProvider, useCurrency] = createContextHook(() => {
     },
   });
 
+  const exchangeRatesQuery = trpc.currency.getExchangeRates.useQuery(
+    { baseCurrency: currency.code },
+    { enabled: !!currency.code, refetchInterval: 3600000 }
+  );
+
   const updateCurrency = useCallback((newCurrency: Currency) => {
     setCurrency(newCurrency);
     saveCurrencyMutation.mutate(newCurrency);
   }, []);
 
+  const convertAmount = useCallback(
+    (amount: number, fromCurrency: string, toCurrency: string): number => {
+      if (fromCurrency === toCurrency || !exchangeRatesQuery.data) {
+        return amount;
+      }
+
+      const rates = exchangeRatesQuery.data.rates;
+      
+      if (exchangeRatesQuery.data.base === fromCurrency) {
+        const rate = rates[toCurrency];
+        return rate ? Math.round(amount * rate * 100) / 100 : amount;
+      }
+      
+      const fromRate = rates[fromCurrency];
+      const toRate = rates[toCurrency];
+      
+      if (fromRate && toRate) {
+        const amountInBase = amount / fromRate;
+        return Math.round(amountInBase * toRate * 100) / 100;
+      }
+      
+      return amount;
+    },
+    [exchangeRatesQuery.data]
+  );
+
+  const getExchangeRate = useCallback(
+    (fromCurrency: string, toCurrency: string): number => {
+      if (fromCurrency === toCurrency || !exchangeRatesQuery.data) {
+        return 1;
+      }
+
+      const rates = exchangeRatesQuery.data.rates;
+      
+      if (exchangeRatesQuery.data.base === fromCurrency) {
+        return rates[toCurrency] || 1;
+      }
+      
+      const fromRate = rates[fromCurrency];
+      const toRate = rates[toCurrency];
+      
+      if (fromRate && toRate) {
+        return toRate / fromRate;
+      }
+      
+      return 1;
+    },
+    [exchangeRatesQuery.data]
+  );
+
   return {
     currency,
     updateCurrency,
+    convertAmount,
+    getExchangeRate,
+    exchangeRates: exchangeRatesQuery.data,
     isLoading: currencyQuery.isLoading,
+    isLoadingRates: exchangeRatesQuery.isLoading,
   };
 });

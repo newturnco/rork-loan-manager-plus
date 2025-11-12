@@ -19,6 +19,7 @@ export interface Loan {
   status: LoanStatus;
   notes?: string;
   createdAt: string;
+  currency: string;
 }
 
 export interface Installment {
@@ -57,6 +58,8 @@ export interface DashboardStats {
   totalAmountReceived: number;
   totalInterestEarned: number;
   totalOutstanding: number;
+  totalPrincipalReceived: number;
+  totalPrincipalOutstanding: number;
   upcomingPayments: Installment[];
   overduePayments: Installment[];
 }

@@ -160,6 +160,9 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
       .filter((i) => i.status === 'paid')
       .reduce((sum, i) => sum + i.interestAmount, 0);
     const totalOutstanding = totalAmountToReceive - totalAmountReceived;
+    
+    const totalPrincipalReceived = payments.reduce((sum, p) => sum + p.principalAmount, 0);
+    const totalPrincipalOutstanding = totalAmountLent - totalPrincipalReceived;
 
     const now = new Date();
     const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -186,10 +189,12 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
       totalAmountReceived,
       totalInterestEarned,
       totalOutstanding,
+      totalPrincipalReceived,
+      totalPrincipalOutstanding,
       upcomingPayments,
       overduePayments,
     };
-  }, [loans, installments]);
+  }, [loans, installments, payments]);
 
   const getLoanById = useCallback((loanId: string) => {
     return loans.find((l) => l.id === loanId);
