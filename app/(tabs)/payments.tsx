@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Search, Plus, DollarSign, Calendar, Trash2 } from 'lucide-react-native';
@@ -122,7 +123,17 @@ export default function PaymentsScreen() {
           headerTintColor: '#FFFFFF',
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push('/add-payment')}
+              onPress={() => {
+                if (Platform.OS === 'android') {
+                  requestAnimationFrame(() => {
+                    setTimeout(() => {
+                      router.push('/add-payment');
+                    }, 0);
+                  });
+                } else {
+                  router.push('/add-payment');
+                }
+              }}
               style={styles.headerButton}
             >
               <Plus color="#FFFFFF" size={24} />
