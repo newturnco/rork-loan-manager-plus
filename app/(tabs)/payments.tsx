@@ -122,7 +122,7 @@ export default function PaymentsScreen() {
           headerTintColor: '#FFFFFF',
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push('/add-loan')}
+              onPress={() => router.push('/add-payment')}
               style={styles.headerButton}
             >
               <Plus color="#FFFFFF" size={24} />

@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { Save, DollarSign, CreditCard } from 'lucide-react-native';
+import { Save, DollarSign, CreditCard, ChevronDown, X } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
@@ -20,16 +22,23 @@ import DatePicker from '@/components/DatePicker';
 
 export default function AddPaymentScreen() {
   const router = useRouter();
-  const { loanId, installmentId } = useLocalSearchParams<{
-    loanId: string;
-    installmentId: string;
+  const { loanId: paramLoanId, installmentId: paramInstallmentId } = useLocalSearchParams<{
+    loanId?: string;
+    installmentId?: string;
   }>();
-  const { getLoanById, getInstallmentsByLoan, recordPayment } = useLoans();
+  const { getLoanById, getInstallmentsByLoan, recordPayment, loans } = useLoans();
   const { currency } = useCurrency();
 
-  const loan = getLoanById(loanId);
-  const installments = getInstallmentsByLoan(loanId);
-  const installment = installments.find((i) => i.id === installmentId);
+  const [selectedLoanId, setSelectedLoanId] = useState<string | undefined>(paramLoanId);
+  const [selectedInstallmentId, setSelectedInstallmentId] = useState<string | undefined>(paramInstallmentId);
+  const [showLoanPicker, setShowLoanPicker] = useState(false);
+  const [showInstallmentPicker, setShowInstallmentPicker] = useState(false);
+
+  const loan = selectedLoanId ? getLoanById(selectedLoanId) : null;
+  const installments = selectedLoanId ? getInstallmentsByLoan(selectedLoanId) : [];
+  const installment = selectedInstallmentId ? installments.find((i) => i.id === selectedInstallmentId) : null;
+  
+  const activeLoans = loans.filter(l => l.status === 'active');
 
   const remainingTotal = installment ? installment.totalAmount - installment.paidAmount : 0;
   const remainingPrincipal = installment 
@@ -61,18 +70,19 @@ export default function AddPaymentScreen() {
     setTotalAmount((principal + interest).toFixed(2));
   }, [principalAmount, interestAmount]);
 
-  if (!loan || !installment) {
-    return (
-      <View style={styles.container}>
-        <Stack.Screen options={{ title: 'Payment Not Found' }} />
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Loan or installment not found</Text>
-        </View>
-      </View>
-    );
-  }
+  const availableInstallments = installments.filter(inst => inst.status !== 'paid');
 
   const handleSave = () => {
+    if (!selectedLoanId || !selectedInstallmentId) {
+      Alert.alert('Error', 'Please select a loan and installment');
+      return;
+    }
+
+    if (!loan || !installment) {
+      Alert.alert('Error', 'Selected loan or installment not found');
+      return;
+    }
+
     const paymentTotalAmount = parseFloat(totalAmount);
     const paymentPrincipalAmount = parseFloat(principalAmount);
     const paymentInterestAmount = parseFloat(interestAmount);
@@ -93,8 +103,8 @@ export default function AddPaymentScreen() {
 
     const payment: Payment = {
       id: Date.now().toString(),
-      loanId,
-      installmentId,
+      loanId: selectedLoanId,
+      installmentId: selectedInstallmentId,
       amount: paymentTotalAmount,
       principalAmount: paymentPrincipalAmount,
       interestAmount: paymentInterestAmount,
@@ -103,7 +113,7 @@ export default function AddPaymentScreen() {
       notes: notes.trim(),
     };
 
-    recordPayment(installmentId, payment);
+    recordPayment(selectedInstallmentId, payment);
 
     const isFullyPaid = paymentTotalAmount >= remainingTotal;
     const message = isFullyPaid
@@ -173,36 +183,73 @@ export default function AddPaymentScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.loanCard}>
-          <Text style={styles.borrowerName}>{loan.borrowerName}</Text>
-          <Text style={styles.installmentTitle}>
-            Installment #{installment.installmentNumber}
-          </Text>
-          <View style={styles.amountSection}>
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Total Amount</Text>
-              <Text style={styles.amountValue}>
-                {formatCurrency(installment.totalAmount, currency.code, currency.symbol)}
-              </Text>
+        {!paramLoanId && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Loan & Installment</Text>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Loan *</Text>
+              <TouchableOpacity
+                style={styles.picker}
+                onPress={() => setShowLoanPicker(true)}
+              >
+                <Text style={[styles.pickerText, !loan && styles.pickerPlaceholder]}>
+                  {loan ? loan.borrowerName : 'Select a loan'}
+                </Text>
+                <ChevronDown color={Colors.textSecondary} size={20} />
+              </TouchableOpacity>
             </View>
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Already Paid</Text>
-              <Text style={[styles.amountValue, { color: Colors.success }]}>
-                {formatCurrency(installment.paidAmount, currency.code, currency.symbol)}
-              </Text>
-            </View>
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Remaining</Text>
-              <Text style={[styles.amountValue, { color: Colors.error }]}>
-                {formatCurrency(remainingTotal, currency.code, currency.symbol)}
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.dueDate}>Due: {formatDate(installment.dueDate)}</Text>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Breakdown</Text>
+            {selectedLoanId && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Installment *</Text>
+                <TouchableOpacity
+                  style={styles.picker}
+                  onPress={() => setShowInstallmentPicker(true)}
+                >
+                  <Text style={[styles.pickerText, !installment && styles.pickerPlaceholder]}>
+                    {installment ? `Installment #${installment.installmentNumber} - Due ${formatDate(installment.dueDate)}` : 'Select an installment'}
+                  </Text>
+                  <ChevronDown color={Colors.textSecondary} size={20} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {loan && installment && (
+          <View style={styles.loanCard}>
+            <Text style={styles.borrowerName}>{loan.borrowerName}</Text>
+            <Text style={styles.installmentTitle}>
+              Installment #{installment.installmentNumber}
+            </Text>
+            <View style={styles.amountSection}>
+              <View style={styles.amountRow}>
+                <Text style={styles.amountLabel}>Total Amount</Text>
+                <Text style={styles.amountValue}>
+                  {formatCurrency(installment.totalAmount, currency.code, currency.symbol)}
+                </Text>
+              </View>
+              <View style={styles.amountRow}>
+                <Text style={styles.amountLabel}>Already Paid</Text>
+                <Text style={[styles.amountValue, { color: Colors.success }]}>
+                  {formatCurrency(installment.paidAmount, currency.code, currency.symbol)}
+                </Text>
+              </View>
+              <View style={styles.amountRow}>
+                <Text style={styles.amountLabel}>Remaining</Text>
+                <Text style={[styles.amountValue, { color: Colors.error }]}>
+                  {formatCurrency(remainingTotal, currency.code, currency.symbol)}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.dueDate}>Due: {formatDate(installment.dueDate)}</Text>
+          </View>
+        )}
+
+        {loan && installment && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Payment Breakdown</Text>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Principal Amount *</Text>
@@ -269,9 +316,11 @@ export default function AddPaymentScreen() {
             >
               <Text style={styles.quickButtonText}>Full Amount</Text>
             </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
+        {loan && installment && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Details</Text>
 
@@ -307,7 +356,9 @@ export default function AddPaymentScreen() {
             />
           </View>
         </View>
+        )}
 
+        {loan && installment && (
         <View style={styles.infoCard}>
           <CreditCard color={Colors.info} size={24} />
           <Text style={styles.infoText}>
@@ -315,11 +366,108 @@ export default function AddPaymentScreen() {
             receipt to {loan.borrowerName}.
           </Text>
         </View>
+        )}
 
-        <TouchableOpacity style={styles.recordButton} onPress={handleSave}>
-          <Text style={styles.recordButtonText}>Record Payment</Text>
-        </TouchableOpacity>
+        {loan && installment && (
+          <TouchableOpacity style={styles.recordButton} onPress={handleSave}>
+            <Text style={styles.recordButtonText}>Record Payment</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
+
+      <Modal
+        visible={showLoanPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowLoanPicker(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Loan</Text>
+              <TouchableOpacity onPress={() => setShowLoanPicker(false)}>
+                <X color={Colors.text} size={24} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={activeLoans}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    setSelectedLoanId(item.id);
+                    setSelectedInstallmentId(undefined);
+                    setPrincipalAmount('0.00');
+                    setInterestAmount('0.00');
+                    setShowLoanPicker(false);
+                  }}
+                >
+                  <Text style={styles.modalItemText}>{item.borrowerName}</Text>
+                  <Text style={styles.modalItemSubtext}>
+                    {formatCurrency(item.principalAmount, currency.code, currency.symbol)} - {item.status}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyModalState}>
+                  <Text style={styles.emptyModalText}>No active loans available</Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showInstallmentPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowInstallmentPicker(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Installment</Text>
+              <TouchableOpacity onPress={() => setShowInstallmentPicker(false)}>
+                <X color={Colors.text} size={24} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={availableInstallments}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const remaining = item.totalAmount - item.paidAmount;
+                return (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => {
+                      setSelectedInstallmentId(item.id);
+                      const remainingPrin = Math.max(0, item.principalAmount - (item.paidAmount * (item.principalAmount / item.totalAmount)));
+                      const remainingInt = Math.max(0, item.interestAmount - (item.paidAmount * (item.interestAmount / item.totalAmount)));
+                      setPrincipalAmount(remainingPrin.toFixed(2));
+                      setInterestAmount(remainingInt.toFixed(2));
+                      setShowInstallmentPicker(false);
+                    }}
+                  >
+                    <Text style={styles.modalItemText}>
+                      Installment #{item.installmentNumber}
+                    </Text>
+                    <Text style={styles.modalItemSubtext}>
+                      Due: {formatDate(item.dueDate)} - Remaining: {formatCurrency(remaining, currency.code, currency.symbol)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={styles.emptyModalState}>
+                  <Text style={styles.emptyModalText}>No unpaid installments available</Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -540,5 +688,70 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
     fontWeight: '600' as const,
+  },
+  picker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  pickerText: {
+    fontSize: 16,
+    color: Colors.text,
+    flex: 1,
+  },
+  pickerPlaceholder: {
+    color: Colors.textSecondary,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.cardBackground,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  modalItem: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalItemText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  modalItemSubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  emptyModalState: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyModalText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
   },
 });
