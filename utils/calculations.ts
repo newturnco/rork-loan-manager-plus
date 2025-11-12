@@ -91,8 +91,10 @@ export function updateInstallmentStatus(installment: Installment): Installment {
   }
 }
 
-export function formatCurrency(amount: number, currencyCode: string = 'AED', currencySymbol: string = 'د.إ'): string {
-  return `${currencySymbol} ${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+export function formatCurrency(amount: number, currencyCode: string = 'AED', currencySymbol: string = 'AED'): string {
+  const validAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+  const validSymbol = currencySymbol || 'AED';
+  return `${validSymbol} ${validAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 }
 
 export function formatDate(date: string): string {
