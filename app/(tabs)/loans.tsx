@@ -10,6 +10,7 @@ import {
 import { Stack, useRouter } from 'expo-router';
 import { Search, Plus, Filter } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { Loan, LoanStatus } from '@/types/loan';
@@ -17,6 +18,7 @@ import { Loan, LoanStatus } from '@/types/loan';
 export default function LoansScreen() {
   const router = useRouter();
   const { loans, getInstallmentsByLoan } = useLoans();
+  const { currency } = useCurrency();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<LoanStatus | 'all'>('all');
 
@@ -90,16 +92,16 @@ export default function LoansScreen() {
         <View style={styles.loanDetails}>
           <View style={styles.amountRow}>
             <Text style={styles.label}>Principal</Text>
-            <Text style={styles.amount}>{formatCurrency(loan.principalAmount)}</Text>
+            <Text style={styles.amount}>{formatCurrency(loan.principalAmount, currency.code, currency.symbol)}</Text>
           </View>
           <View style={styles.amountRow}>
             <Text style={styles.label}>Total Due</Text>
-            <Text style={styles.amount}>{formatCurrency(totalAmount)}</Text>
+            <Text style={styles.amount}>{formatCurrency(totalAmount, currency.code, currency.symbol)}</Text>
           </View>
           <View style={styles.amountRow}>
             <Text style={styles.label}>Remaining</Text>
             <Text style={[styles.amount, { color: Colors.error }]}>
-              {formatCurrency(totalAmount - totalPaid)}
+              {formatCurrency(totalAmount - totalPaid, currency.code, currency.symbol)}
             </Text>
           </View>
         </View>

@@ -18,12 +18,14 @@ import {
   DollarSign,
 } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate, getDaysUntil } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { dashboardStats, loans, isLoading } = useLoans();
+  const { currency } = useCurrency();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(() => {
@@ -93,25 +95,25 @@ export default function DashboardScreen() {
         <View style={styles.statsGrid}>
           <StatCard
             label="Total Lent"
-            value={formatCurrency(dashboardStats.totalAmountLent)}
+            value={formatCurrency(dashboardStats.totalAmountLent, currency.code, currency.symbol)}
             color={Colors.primary}
             icon={<TrendingUp color={Colors.primary} size={20} />}
           />
           <StatCard
             label="Outstanding"
-            value={formatCurrency(dashboardStats.totalOutstanding)}
+            value={formatCurrency(dashboardStats.totalOutstanding, currency.code, currency.symbol)}
             color={Colors.warning}
             icon={<Clock color={Colors.warning} size={20} />}
           />
           <StatCard
             label="Received"
-            value={formatCurrency(dashboardStats.totalAmountReceived)}
+            value={formatCurrency(dashboardStats.totalAmountReceived, currency.code, currency.symbol)}
             color={Colors.success}
             icon={<CheckCircle color={Colors.success} size={20} />}
           />
           <StatCard
             label="Interest Earned"
-            value={formatCurrency(dashboardStats.totalInterestEarned)}
+            value={formatCurrency(dashboardStats.totalInterestEarned, currency.code, currency.symbol)}
             color={Colors.secondary}
             icon={<DollarSign color={Colors.secondary} size={20} />}
           />
@@ -166,7 +168,7 @@ export default function DashboardScreen() {
                   <View style={styles.paymentInfo}>
                     <Text style={styles.borrowerName}>{loan?.borrowerName}</Text>
                     <Text style={styles.paymentAmount}>
-                      {formatCurrency(installment.totalAmount - installment.paidAmount)}
+                      {formatCurrency(installment.totalAmount - installment.paidAmount, currency.code, currency.symbol)}
                     </Text>
                   </View>
                   <Text style={styles.overdueText}>{daysOverdue} days overdue</Text>
@@ -201,7 +203,7 @@ export default function DashboardScreen() {
                   <View style={styles.paymentInfo}>
                     <Text style={styles.borrowerName}>{loan?.borrowerName}</Text>
                     <Text style={styles.paymentAmount}>
-                      {formatCurrency(installment.totalAmount)}
+                      {formatCurrency(installment.totalAmount, currency.code, currency.symbol)}
                     </Text>
                   </View>
                   <View style={styles.paymentMeta}>

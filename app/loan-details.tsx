@@ -20,6 +20,7 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate, getDaysUntil, isOverdue } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { Installment } from '@/types/loan';
@@ -28,6 +29,7 @@ export default function LoanDetailsScreen() {
   const router = useRouter();
   const { loanId } = useLocalSearchParams<{ loanId: string }>();
   const { getLoanById, getInstallmentsByLoan, deleteLoan, updateLoan } = useLoans();
+  const { currency } = useCurrency();
 
   const loan = getLoanById(loanId);
   const installments = getInstallmentsByLoan(loanId);
@@ -71,7 +73,7 @@ export default function LoanDetailsScreen() {
   };
 
   const sendWhatsAppReminder = (installment: Installment) => {
-    const message = `Hi ${loan.borrowerName}, this is a friendly reminder about your loan payment.\n\nInstallment #${installment.installmentNumber}\nDue Date: ${formatDate(installment.dueDate)}\nAmount Due: ${formatCurrency(installment.totalAmount - installment.paidAmount)}\n\nThank you!`;
+    const message = `Hi ${loan.borrowerName}, this is a friendly reminder about your loan payment.\n\nInstallment #${installment.installmentNumber}\nDue Date: ${formatDate(installment.dueDate)}\nAmount Due: ${formatCurrency(installment.totalAmount - installment.paidAmount, currency.code, currency.symbol)}\n\nThank you!`;
     
     const phoneNumber = loan.borrowerPhone.replace(/[^0-9]/g, '');
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -144,20 +146,20 @@ export default function LoanDetailsScreen() {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Total Amount</Text>
             <Text style={styles.detailValue}>
-              {formatCurrency(installment.totalAmount)}
+              {formatCurrency(installment.totalAmount, currency.code, currency.symbol)}
             </Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Paid Amount</Text>
             <Text style={[styles.detailValue, { color: Colors.success }]}>
-              {formatCurrency(installment.paidAmount)}
+              {formatCurrency(installment.paidAmount, currency.code, currency.symbol)}
             </Text>
           </View>
           {remaining > 0 && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Remaining</Text>
               <Text style={[styles.detailValue, { color: Colors.error }]}>
-                {formatCurrency(remaining)}
+                {formatCurrency(remaining, currency.code, currency.symbol)}
               </Text>
             </View>
           )}
@@ -247,23 +249,23 @@ export default function LoanDetailsScreen() {
             <View style={styles.amountItem}>
               <Text style={styles.amountLabel}>Principal</Text>
               <Text style={styles.amountValue}>
-                {formatCurrency(loan.principalAmount)}
+                {formatCurrency(loan.principalAmount, currency.code, currency.symbol)}
               </Text>
             </View>
             <View style={styles.amountItem}>
               <Text style={styles.amountLabel}>Total Due</Text>
-              <Text style={styles.amountValue}>{formatCurrency(totalAmount)}</Text>
+              <Text style={styles.amountValue}>{formatCurrency(totalAmount, currency.code, currency.symbol)}</Text>
             </View>
             <View style={styles.amountItem}>
               <Text style={styles.amountLabel}>Total Paid</Text>
               <Text style={[styles.amountValue, { color: Colors.success }]}>
-                {formatCurrency(totalPaid)}
+                {formatCurrency(totalPaid, currency.code, currency.symbol)}
               </Text>
             </View>
             <View style={styles.amountItem}>
               <Text style={styles.amountLabel}>Remaining</Text>
               <Text style={[styles.amountValue, { color: Colors.error }]}>
-                {formatCurrency(totalRemaining)}
+                {formatCurrency(totalRemaining, currency.code, currency.symbol)}
               </Text>
             </View>
           </View>
