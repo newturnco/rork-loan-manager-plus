@@ -7,6 +7,7 @@ import { LoanProvider } from "@/contexts/LoanContext";
 import { CustomerProvider } from "@/contexts/CustomerContext";
 import { AlertSettingsProvider } from "@/contexts/AlertSettingsContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { trpc, trpcClient } from "@/lib/trpc";
 
 
 SplashScreen.preventAutoHideAsync();
@@ -63,17 +64,19 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CurrencyProvider>
-        <AlertSettingsProvider>
-          <CustomerProvider>
-            <LoanProvider>
-              <GestureHandlerRootView>
-                <RootLayoutNav />
-              </GestureHandlerRootView>
-            </LoanProvider>
-          </CustomerProvider>
-        </AlertSettingsProvider>
-      </CurrencyProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <CurrencyProvider>
+          <AlertSettingsProvider>
+            <CustomerProvider>
+              <LoanProvider>
+                <GestureHandlerRootView>
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+              </LoanProvider>
+            </CustomerProvider>
+          </AlertSettingsProvider>
+        </CurrencyProvider>
+      </trpc.Provider>
     </QueryClientProvider>
   );
 }
