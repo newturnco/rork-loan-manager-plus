@@ -12,10 +12,11 @@ import {
   Modal,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight } from 'lucide-react-native';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Cloud, Download, Upload, Database, Calendar } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { useBackup } from '@/contexts/BackupContext';
 import Colors from '@/constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -24,8 +25,11 @@ export default function SettingsScreen() {
   const { loans, installments, payments } = useLoans();
   const { settings, updateSettings } = useAlertSettings();
   const { currency, updateCurrency } = useCurrency();
+  const backup = useBackup();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [showGoogleDriveSetup, setShowGoogleDriveSetup] = useState(false);
+  const [googleClientId, setGoogleClientId] = useState('');
 
   const handleClearData = () => {
     Alert.alert(
@@ -54,6 +58,61 @@ export default function SettingsScreen() {
     updateCurrency(newCurrency);
     setShowCurrencyModal(false);
     Alert.alert('Success', `Currency changed to ${newCurrency.name}`);
+  };
+
+  const handleManualBackup = async () => {
+    try {
+      await backup.createManualBackup();
+      Alert.alert('Success', 'Backup created successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create backup');
+    }
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      const result = await backup.exportBackup();
+      Alert.alert('Success', `Backup exported successfully!\n${result}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export backup');
+    }
+  };
+
+  const handleImportBackup = async () => {
+    Alert.alert(
+      'Import Backup',
+      'This will replace all current data with the backup. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Import',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await backup.importBackup();
+              Alert.alert('Success', 'Backup restored successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to restore backup');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleGoogleDriveAuth = async () => {
+    if (!googleClientId) {
+      Alert.alert('Error', 'Please enter Google Client ID');
+      return;
+    }
+
+    const success = await backup.authenticateGoogleDrive(googleClientId);
+    if (success) {
+      setShowGoogleDriveSetup(false);
+      Alert.alert('Success', 'Google Drive connected successfully!');
+    } else {
+      Alert.alert('Error', 'Failed to connect to Google Drive');
+    }
   };
 
 
@@ -238,6 +297,97 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Backup & Restore</Text>
+          
+          <View style={styles.settingsCard}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <Database color={Colors.info} size={20} />
+                <View style={styles.settingText}>
+                  <Text style={styles.settingLabel}>Auto Backup</Text>
+                  <Text style={styles.settingDescription}>Automatic backup schedule</Text>
+                </View>
+              </View>
+              <Switch
+                value={backup.settings.autoBackupEnabled}
+                onValueChange={(value) => backup.updateSettings({ autoBackupEnabled: value })}
+                trackColor={{ false: Colors.border, true: Colors.primary + '50' }}
+                thumbColor={backup.settings.autoBackupEnabled ? Colors.primary : Colors.textSecondary}
+              />
+            </View>
+
+            {backup.settings.autoBackupEnabled && (
+              <View style={styles.settingRow}>
+                <View style={styles.settingLeft}>
+                  <Calendar color={Colors.info} size={20} />
+                  <View style={styles.settingText}>
+                    <Text style={styles.settingLabel}>Frequency</Text>
+                    <Text style={styles.settingDescription}>{backup.settings.autoBackupFrequency}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    const frequencies: Array<'daily' | 'weekly' | 'monthly'> = ['daily', 'weekly', 'monthly'];
+                    const currentIndex = frequencies.indexOf(backup.settings.autoBackupFrequency);
+                    const nextIndex = (currentIndex + 1) % frequencies.length;
+                    backup.updateSettings({ autoBackupFrequency: frequencies[nextIndex] });
+                  }}
+                >
+                  <ChevronRight color={Colors.textSecondary} size={20} />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <Cloud color={Colors.success} size={20} />
+                <View style={styles.settingText}>
+                  <Text style={styles.settingLabel}>Google Drive Backup</Text>
+                  <Text style={styles.settingDescription}>
+                    {backup.settings.googleDriveEnabled ? 'Connected' : 'Not connected'}
+                  </Text>
+                </View>
+              </View>
+              {backup.settings.googleDriveEnabled ? (
+                <TouchableOpacity
+                  onPress={async () => {
+                    await backup.disconnectGoogleDrive();
+                    Alert.alert('Success', 'Google Drive disconnected');
+                  }}
+                >
+                  <Text style={styles.disconnectText}>Disconnect</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={() => setShowGoogleDriveSetup(true)}>
+                  <Text style={styles.connectText}>Connect</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <SettingCard
+            icon={<Upload color={Colors.info} size={24} />}
+            title="Create Backup"
+            subtitle="Backup all data manually"
+            onPress={handleManualBackup}
+          />
+          
+          <SettingCard
+            icon={<Download color={Colors.success} size={24} />}
+            title="Export Backup"
+            subtitle="Save backup to file"
+            onPress={handleExportBackup}
+          />
+          
+          <SettingCard
+            icon={<Upload color={Colors.warning} size={24} />}
+            title="Import Backup"
+            subtitle="Restore data from file"
+            onPress={handleImportBackup}
+          />
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
           <SettingCard
             icon={<MessageCircle color={Colors.success} size={24} />}
@@ -295,6 +445,46 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showGoogleDriveSetup}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowGoogleDriveSetup(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Connect Google Drive</Text>
+              <TouchableOpacity onPress={() => setShowGoogleDriveSetup(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.modalDescription}>
+              To enable Google Drive backup, you need to provide your Google Cloud OAuth Client ID.
+            </Text>
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Google Client ID"
+              value={googleClientId}
+              onChangeText={setGoogleClientId}
+              autoCapitalize="none"
+            />
+            
+            <TouchableOpacity
+              style={styles.connectButton}
+              onPress={handleGoogleDriveAuth}
+              disabled={backup.isAuthenticating}
+            >
+              <Text style={styles.connectButtonText}>
+                {backup.isAuthenticating ? 'Connecting...' : 'Connect'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -537,5 +727,43 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700' as const,
     color: Colors.primary,
+  },
+  connectText: {
+    color: Colors.primary,
+    fontWeight: '600' as const,
+    fontSize: 14,
+  },
+  disconnectText: {
+    color: Colors.error,
+    fontWeight: '600' as const,
+    fontSize: 14,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  input: {
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 16,
+  },
+  connectButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  connectButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700' as const,
   },
 });
