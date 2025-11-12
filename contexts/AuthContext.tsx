@@ -23,17 +23,18 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
   const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 
-  const isGoogleAuthConfigured = !!(webClientId || iosClientId || androidClientId);
+  const isGoogleAuthConfigured = (
+    (Platform.OS === 'web' && webClientId) ||
+    (Platform.OS === 'ios' && iosClientId) ||
+    (Platform.OS === 'android' && androidClientId)
+  );
 
   const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest(
-    isGoogleAuthConfigured
-      ? {
-          webClientId,
-          iosClientId,
-          androidClientId,
-        }
-      : { webClientId: '' },
-    { disabled: !isGoogleAuthConfigured }
+    {
+      webClientId: webClientId || undefined,
+      iosClientId: iosClientId || undefined,
+      androidClientId: androidClientId || undefined,
+    }
   );
 
   const userQuery = useQuery({
