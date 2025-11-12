@@ -53,6 +53,13 @@ function RootLayoutNav() {
           title: "Edit Customer"
         }} 
       />
+      <Stack.Screen 
+        name="edit-loan" 
+        options={{ 
+          presentation: "card",
+          title: "Edit Loan"
+        }} 
+      />
     </Stack>
   );
 }
@@ -69,7 +76,7 @@ export default function RootLayout() {
           <AlertSettingsProvider>
             <CustomerProvider>
               <LoanProvider>
-                <GestureHandlerRootView>
+                <GestureHandlerRootView style={{ flex: 1 }}>
                   <RootLayoutNav />
                 </GestureHandlerRootView>
               </LoanProvider>
