@@ -230,7 +230,7 @@ export default function CalculatorScreen() {
 
         <View style={styles.quickConversions}>
           <Text style={styles.sectionTitle}>Quick Conversions</Text>
-          {exchangeRates && (
+          {exchangeRates && exchangeRates.rates ? (
             <View style={styles.quickConversionsList}>
               {[1, 10, 100, 1000].map((value) => {
                 const rate = exchangeRates.rates[toCurrency.code] || 1;
@@ -247,6 +247,10 @@ export default function CalculatorScreen() {
                   </View>
                 );
               })}
+            </View>
+          ) : (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoText}>Loading exchange rates...</Text>
             </View>
           )}
         </View>
