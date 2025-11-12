@@ -222,7 +222,7 @@ export default function LoanDetailsScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 12, marginRight: 16 }}>
+            <View style={styles.headerRightContainer}>
               <TouchableOpacity
                 onPress={() =>
                   router.push({ pathname: '/edit-loan', params: { loanId } })
@@ -419,6 +419,12 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8,
+  },
+  headerRightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginRight: 16,
   },
   scrollView: {
     flex: 1,

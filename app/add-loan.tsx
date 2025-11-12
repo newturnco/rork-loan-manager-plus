@@ -263,7 +263,7 @@ export default function AddLoanScreen() {
               <Text style={selectedCustomer ? styles.customerSelectedText : styles.customerPlaceholderText}>
                 {selectedCustomer ? borrowerName : 'Select a customer'}
               </Text>
-              <Save color={Colors.textSecondary} size={20} />
+              <ChevronDown color={Colors.textSecondary} size={20} />
             </TouchableOpacity>
             
             {customers.length === 0 && (
@@ -271,7 +271,7 @@ export default function AddLoanScreen() {
                 style={styles.addCustomerButton}
                 onPress={() => router.push('/add-customer')}
               >
-                <Save color={Colors.primary} size={18} />
+                <Plus color={Colors.primary} size={18} />
                 <Text style={styles.addCustomerText}>Add New Customer</Text>
               </TouchableOpacity>
             )}
@@ -321,7 +321,7 @@ export default function AddLoanScreen() {
                     router.push('/add-customer');
                   }}
                 >
-                  <Save color={Colors.primary} size={20} />
+                  <Plus color={Colors.primary} size={20} />
                   <Text style={styles.addNewCustomerText}>Add New Customer</Text>
                 </TouchableOpacity>
               </ScrollView>
