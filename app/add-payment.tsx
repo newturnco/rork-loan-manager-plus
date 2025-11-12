@@ -82,7 +82,8 @@ export default function AddPaymentScreen() {
       return;
     }
 
-    if (paymentTotalAmount > remainingTotal) {
+    const tolerance = 0.01;
+    if (paymentTotalAmount > remainingTotal + tolerance) {
       Alert.alert(
         'Error',
         `Payment amount cannot exceed remaining amount of ${formatCurrency(remainingTotal, currency.code, currency.symbol)}`
