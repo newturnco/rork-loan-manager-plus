@@ -46,7 +46,8 @@ export const [CustomerProvider, useCustomers] = createContextHook(() => {
     );
     setCustomers(newCustomers);
     saveCustomersMutation.mutate(newCustomers);
-  }, [customers]);
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+  }, [customers, queryClient]);
 
   const deleteCustomer = useCallback((customerId: string) => {
     const newCustomers = customers.filter((c) => c.id !== customerId);

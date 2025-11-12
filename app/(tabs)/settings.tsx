@@ -11,18 +11,21 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { Stack } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight } from 'lucide-react-native';
+import { Stack, useRouter } from 'expo-router';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, LogOut, Crown, User as UserIcon } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { useAuth } from '@/contexts/AuthContext';
 import Colors from '@/constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { loans, installments, payments } = useLoans();
   const { settings, updateSettings } = useAlertSettings();
   const { currency, updateCurrency } = useCurrency();
+  const { user, signOut, updateLicense } = useAuth();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
 
@@ -53,6 +56,43 @@ export default function SettingsScreen() {
     updateCurrency(newCurrency);
     setShowCurrencyModal(false);
     Alert.alert('Success', `Currency changed to ${newCurrency.name}`);
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            router.replace('/sign-in');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUpgradeToPremium = () => {
+    Alert.alert(
+      'Upgrade to Premium',
+      'Premium features include:\n\n• Unlimited loans and customers\n• Advanced reporting\n• Priority support\n• Cloud backup\n• Export to Excel\n\nPrice: $9.99/month',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Upgrade',
+          onPress: () => {
+            const expiresAt = new Date();
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+            updateLicense('premium', expiresAt.toISOString());
+            Alert.alert('Success', 'Upgraded to Premium!');
+          },
+        },
+      ]
+    );
   };
 
   const SettingCard = ({
@@ -101,6 +141,42 @@ export default function SettingsScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
+        {user && (
+          <View style={styles.profileSection}>
+            <View style={styles.profileHeader}>
+              <View style={styles.avatar}>
+                <UserIcon color={Colors.primary} size={32} />
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>{user.name}</Text>
+                <Text style={styles.profileEmail}>{user.email}</Text>
+              </View>
+            </View>
+            <View style={styles.licenseSection}>
+              <View style={styles.licenseBadge}>
+                <Crown 
+                  color={user.licenseType === 'premium' ? '#FFD700' : Colors.textSecondary} 
+                  size={20} 
+                />
+                <Text style={[
+                  styles.licenseText,
+                  user.licenseType === 'premium' && styles.premiumText
+                ]}>
+                  {user.licenseType === 'premium' ? 'Premium' : 'Free'}
+                </Text>
+              </View>
+              {user.licenseType === 'free' && (
+                <TouchableOpacity 
+                  style={styles.upgradeButton}
+                  onPress={handleUpgradeToPremium}
+                >
+                  <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
         <View style={styles.statsSection}>
           <Text style={styles.statsTitle}>App Statistics</Text>
           <View style={styles.statsGrid}>
@@ -257,6 +333,13 @@ export default function SettingsScreen() {
             onPress={handleClearData}
             danger
           />
+          <SettingCard
+            icon={<LogOut color={Colors.error} size={24} />}
+            title="Sign Out"
+            subtitle="Sign out of your account"
+            onPress={handleSignOut}
+            danger
+          />
         </View>
       </ScrollView>
 
@@ -310,6 +393,80 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 32,
+  },
+  profileSection: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.primary + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  licenseSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  licenseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  licenseText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.textSecondary,
+  },
+  premiumText: {
+    color: '#FFD700',
+  },
+  upgradeButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  upgradeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700' as const,
   },
   statsSection: {
     backgroundColor: Colors.cardBackground,

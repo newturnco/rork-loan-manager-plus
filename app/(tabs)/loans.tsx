@@ -262,13 +262,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   filterContent: {
-    padding: 16,
-    gap: 8,
+    padding: 12,
+    gap: 6,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: Colors.background,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600' as const,
     color: Colors.textSecondary,
   },
