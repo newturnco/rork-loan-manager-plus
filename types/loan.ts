@@ -56,6 +56,7 @@ export interface DashboardStats {
   totalAmountLent: number;
   totalAmountToReceive: number;
   totalAmountReceived: number;
+  totalInterestExpected: number;
   totalInterestEarned: number;
   totalOutstanding: number;
   totalPrincipalReceived: number;

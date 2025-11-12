@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  Edit,
 } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -28,11 +29,12 @@ import { Installment } from '@/types/loan';
 export default function LoanDetailsScreen() {
   const router = useRouter();
   const { loanId } = useLocalSearchParams<{ loanId: string }>();
-  const { getLoanById, getInstallmentsByLoan, deleteLoan, updateLoan } = useLoans();
+  const { getLoanById, getInstallmentsByLoan, getPaymentsByLoan, deleteLoan, deletePayment } = useLoans();
   const { currency } = useCurrency();
 
   const loan = getLoanById(loanId);
   const installments = getInstallmentsByLoan(loanId);
+  const loanPayments = getPaymentsByLoan(loanId);
 
   if (!loan) {
     return (
@@ -220,9 +222,19 @@ export default function LoanDetailsScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-              <Trash2 color={Colors.error} size={24} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 12, marginRight: 16 }}>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({ pathname: '/edit-loan', params: { loanId } })
+                }
+                style={styles.iconButton}
+              >
+                <Edit color="#FFFFFF" size={24} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDelete} style={styles.iconButton}>
+                <Trash2 color={Colors.error} size={24} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -323,6 +335,78 @@ export default function LoanDetailsScreen() {
             <InstallmentCard key={installment.id} installment={installment} />
           ))}
         </View>
+
+        {loanPayments.length > 0 && (
+          <View style={styles.paymentsSection}>
+            <Text style={styles.sectionTitle}>Payment History</Text>
+            {loanPayments.map((payment) => {
+              const installment = installments.find((i) => i.id === payment.installmentId);
+              return (
+                <View key={payment.id} style={styles.paymentCard}>
+                  <View style={styles.paymentHeader}>
+                    <View>
+                      <Text style={styles.paymentAmount}>
+                        {formatCurrency(payment.amount, currency.code, currency.symbol)}
+                      </Text>
+                      <Text style={styles.paymentDate}>
+                        {formatDate(payment.paymentDate)}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Alert.alert(
+                          'Delete Payment',
+                          'Are you sure you want to delete this payment?',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Delete',
+                              style: 'destructive',
+                              onPress: () => deletePayment(payment.id),
+                            },
+                          ]
+                        );
+                      }}
+                      style={styles.deletePaymentButton}
+                    >
+                      <Trash2 color={Colors.error} size={20} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.paymentBreakdown}>
+                    <View style={styles.paymentRow}>
+                      <Text style={styles.paymentLabel}>Principal</Text>
+                      <Text style={styles.paymentValue}>
+                        {formatCurrency(payment.principalAmount, currency.code, currency.symbol)}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentRow}>
+                      <Text style={styles.paymentLabel}>Interest</Text>
+                      <Text style={styles.paymentValue}>
+                        {formatCurrency(payment.interestAmount, currency.code, currency.symbol)}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentRow}>
+                      <Text style={styles.paymentLabel}>Installment</Text>
+                      <Text style={styles.paymentValue}>
+                        #{installment?.installmentNumber || '-'}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentRow}>
+                      <Text style={styles.paymentLabel}>Method</Text>
+                      <Text style={styles.paymentValue}>{payment.method}</Text>
+                    </View>
+                    {payment.notes && (
+                      <View style={styles.paymentNotes}>
+                        <Text style={styles.paymentNotesLabel}>Notes:</Text>
+                        <Text style={styles.paymentNotesText}>{payment.notes}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -333,8 +417,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  deleteButton: {
-    marginRight: 16,
+  iconButton: {
     padding: 8,
   },
   scrollView: {
@@ -561,5 +644,74 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     color: Colors.textSecondary,
+  },
+  paymentsSection: {
+    marginBottom: 16,
+  },
+  paymentCard: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  paymentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  paymentAmount: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.success,
+    marginBottom: 4,
+  },
+  paymentDate: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  deletePaymentButton: {
+    padding: 8,
+  },
+  paymentBreakdown: {
+    gap: 8,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  paymentLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  paymentValue: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  paymentNotes: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  paymentNotesLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  paymentNotesText: {
+    fontSize: 14,
+    color: Colors.text,
+    lineHeight: 20,
   },
 });

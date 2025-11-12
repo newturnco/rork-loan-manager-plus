@@ -156,10 +156,10 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
     const totalAmountLent = loans.reduce((sum, l) => sum + l.principalAmount, 0);
     const totalAmountToReceive = installments.reduce((sum, i) => sum + i.totalAmount, 0);
     const totalAmountReceived = installments.reduce((sum, i) => sum + i.paidAmount, 0);
-    const totalInterestEarned = installments
-      .filter((i) => i.status === 'paid')
-      .reduce((sum, i) => sum + i.interestAmount, 0);
     const totalOutstanding = totalAmountToReceive - totalAmountReceived;
+    
+    const totalInterestExpected = installments.reduce((sum, i) => sum + i.interestAmount, 0);
+    const totalInterestEarned = payments.reduce((sum, p) => sum + p.interestAmount, 0);
     
     const totalPrincipalReceived = payments.reduce((sum, p) => sum + p.principalAmount, 0);
     const totalPrincipalOutstanding = totalAmountLent - totalPrincipalReceived;
@@ -187,6 +187,7 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
       totalAmountLent,
       totalAmountToReceive,
       totalAmountReceived,
+      totalInterestExpected,
       totalInterestEarned,
       totalOutstanding,
       totalPrincipalReceived,
@@ -212,6 +213,28 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
       .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
   }, [payments]);
 
+  const deletePayment = useCallback((paymentId: string) => {
+    const payment = payments.find((p) => p.id === paymentId);
+    if (!payment) return;
+
+    const newPayments = payments.filter((p) => p.id !== paymentId);
+    setPayments(newPayments);
+    savePaymentsMutation.mutate(newPayments);
+
+    const installment = installments.find((i) => i.id === payment.installmentId);
+    if (installment) {
+      const updatedInstallment = {
+        ...installment,
+        paidAmount: Math.max(0, installment.paidAmount - payment.amount),
+      };
+      const newInstallments = installments.map((i) =>
+        i.id === payment.installmentId ? updateInstallmentStatus(updatedInstallment) : i
+      );
+      setInstallments(newInstallments);
+      saveInstallmentsMutation.mutate(newInstallments);
+    }
+  }, [payments, installments]);
+
   return {
     loans,
     installments,
@@ -224,6 +247,7 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
     getLoanById,
     getInstallmentsByLoan,
     getPaymentsByLoan,
+    deletePayment,
     isLoading: loansQuery.isLoading || installmentsQuery.isLoading,
   };
 });

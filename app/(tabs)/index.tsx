@@ -106,16 +106,16 @@ export default function DashboardScreen() {
             icon={<Clock color={Colors.warning} size={20} />}
           />
           <StatCard
-            label="Total Received"
-            value={formatCurrency(dashboardStats.totalAmountReceived, currency.code, currency.symbol)}
-            color={Colors.success}
-            icon={<CheckCircle color={Colors.success} size={20} />}
+            label="Interest Expected"
+            value={formatCurrency(dashboardStats.totalInterestExpected, currency.code, currency.symbol)}
+            color={Colors.info}
+            icon={<TrendingDown color={Colors.info} size={20} />}
           />
           <StatCard
             label="Interest Earned"
             value={formatCurrency(dashboardStats.totalInterestEarned, currency.code, currency.symbol)}
-            color={Colors.secondary}
-            icon={<DollarSign color={Colors.secondary} size={20} />}
+            color={Colors.success}
+            icon={<DollarSign color={Colors.success} size={20} />}
           />
         </View>
 

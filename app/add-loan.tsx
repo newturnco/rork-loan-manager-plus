@@ -19,6 +19,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import Colors from '@/constants/colors';
 import { Loan, InterestType, InstallmentFrequency } from '@/types/loan';
 import { calculateInterestRate, calculateInterestAmount, calculateDurationInMonths, formatDateToISO, parseDateDDMMYYYY } from '@/utils/calculations';
+import DatePicker from '@/components/DatePicker';
 
 export default function AddLoanScreen() {
   const router = useRouter();
@@ -334,7 +335,7 @@ export default function AddLoanScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Principal Amount *</Text>
             <View style={styles.inputWithIcon}>
-              <DollarSign color={Colors.textSecondary} size={20} />
+              <Text style={styles.currencySymbol}>{currency.symbol}</Text>
               <TextInput
                 style={styles.inputWithIconText}
                 placeholder="0.00"
@@ -399,15 +400,15 @@ export default function AddLoanScreen() {
               />
               {interestAmount && (
                 <Text style={styles.calculatedHint}>
-                  Calculated Interest Amount: ${parseFloat(interestAmount).toFixed(2)}
+                  Calculated Interest Amount: {currency.symbol} {parseFloat(interestAmount).toFixed(2)}
                 </Text>
               )}
             </View>
           ) : (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Interest Amount ($) *</Text>
+              <Text style={styles.label}>Interest Amount ({currency.symbol}) *</Text>
               <View style={styles.inputWithIcon}>
-                <DollarSign color={Colors.textSecondary} size={20} />
+                <Text style={styles.currencySymbol}>{currency.symbol}</Text>
                 <TextInput
                   style={styles.inputWithIconText}
                   placeholder="0.00"
@@ -439,20 +440,12 @@ export default function AddLoanScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Schedule</Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Start Date *</Text>
-            <View style={styles.inputWithIcon}>
-              <Calendar color={Colors.textSecondary} size={20} />
-              <TextInput
-                style={styles.inputWithIconText}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={Colors.textSecondary}
-                value={startDate}
-                onChangeText={setStartDate}
-              />
-            </View>
-            <Text style={styles.hint}>Format: DD-MM-YYYY</Text>
-          </View>
+          <DatePicker
+            label="Start Date *"
+            value={startDate}
+            onChange={setStartDate}
+            testID="start-date-picker"
+          />
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Number of Installments *</Text>
@@ -765,6 +758,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.success,
     marginTop: 8,
+    fontWeight: '600' as const,
+  },
+  currencySymbol: {
+    fontSize: 16,
+    color: Colors.text,
     fontWeight: '600' as const,
   },
 });

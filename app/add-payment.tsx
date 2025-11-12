@@ -207,7 +207,7 @@ export default function AddPaymentScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Principal Amount *</Text>
             <View style={styles.inputWithIcon}>
-              <DollarSign color={Colors.textSecondary} size={20} />
+              <Text style={styles.currencySymbol}>{currency.symbol}</Text>
               <TextInput
                 style={styles.inputWithIconText}
                 placeholder="0.00"
@@ -225,7 +225,7 @@ export default function AddPaymentScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Interest Amount *</Text>
             <View style={styles.inputWithIcon}>
-              <DollarSign color={Colors.textSecondary} size={20} />
+              <Text style={styles.currencySymbol}>{currency.symbol}</Text>
               <TextInput
                 style={styles.inputWithIconText}
                 placeholder="0.00"
@@ -535,5 +535,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     color: Colors.textSecondary,
+  },
+  currencySymbol: {
+    fontSize: 16,
+    color: Colors.text,
+    fontWeight: '600' as const,
   },
 });
