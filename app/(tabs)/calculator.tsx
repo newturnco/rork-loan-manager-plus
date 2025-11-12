@@ -22,13 +22,21 @@ export default function CalculatorScreen() {
   const [amount, setAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState<Currency>(defaultCurrency);
   const [toCurrency, setToCurrency] = useState<Currency>(CURRENCIES[1]);
-  const [convertedAmount, setConvertedAmount] = useState<number | null>(null);
   const [showFromModal, setShowFromModal] = useState(false);
   const [showToModal, setShowToModal] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [shouldConvert, setShouldConvert] = useState(false);
 
-  const convertMutation = trpc.currency.convertCurrency.useMutation();
+  const convertQuery = trpc.currency.convertCurrency.useQuery(
+    {
+      amount: parseFloat(amount) || 0,
+      fromCurrency: fromCurrency.code,
+      toCurrency: toCurrency.code,
+    },
+    {
+      enabled: shouldConvert && !!amount && parseFloat(amount) > 0,
+    }
+  );
 
   useEffect(() => {
     if (exchangeRates) {
@@ -36,27 +44,18 @@ export default function CalculatorScreen() {
     }
   }, [exchangeRates]);
 
-  const handleConvert = async () => {
+  const handleConvert = () => {
     if (!amount || parseFloat(amount) <= 0) {
       return;
     }
-
-    const result = await convertMutation.mutateAsync({
-      amount: parseFloat(amount),
-      fromCurrency: fromCurrency.code,
-      toCurrency: toCurrency.code,
-    });
-
-    setConvertedAmount(result.convertedAmount);
-    setExchangeRate(result.rate);
+    setShouldConvert(true);
   };
 
   const handleSwapCurrencies = () => {
     const temp = fromCurrency;
     setFromCurrency(toCurrency);
     setToCurrency(temp);
-    setConvertedAmount(null);
-    setExchangeRate(null);
+    setShouldConvert(false);
   };
 
   const CurrencyModal = ({
@@ -147,8 +146,7 @@ export default function CalculatorScreen() {
               value={amount}
               onChangeText={(text) => {
                 setAmount(text);
-                setConvertedAmount(null);
-                setExchangeRate(null);
+                setShouldConvert(false);
               }}
               keyboardType="decimal-pad"
             />
@@ -190,9 +188,9 @@ export default function CalculatorScreen() {
         <TouchableOpacity
           style={[styles.convertButton, (!amount || parseFloat(amount) <= 0) && styles.convertButtonDisabled]}
           onPress={handleConvert}
-          disabled={!amount || parseFloat(amount) <= 0 || convertMutation.isPending}
+          disabled={!amount || parseFloat(amount) <= 0 || convertQuery.isLoading}
         >
-          {convertMutation.isPending ? (
+          {convertQuery.isLoading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
@@ -202,13 +200,13 @@ export default function CalculatorScreen() {
           )}
         </TouchableOpacity>
 
-        {convertedAmount !== null && (
+        {convertQuery.data && shouldConvert && (
           <View style={styles.resultCard}>
             <View style={styles.resultHeader}>
               <Text style={styles.resultLabel}>Converted Amount</Text>
-              {exchangeRate && (
+              {convertQuery.data.rate && (
                 <Text style={styles.rateText}>
-                  1 {fromCurrency.code} = {exchangeRate.toFixed(4)} {toCurrency.code}
+                  1 {fromCurrency.code} = {convertQuery.data.rate.toFixed(4)} {toCurrency.code}
                 </Text>
               )}
             </View>
@@ -222,7 +220,7 @@ export default function CalculatorScreen() {
               <ArrowRightLeft color={Colors.textSecondary} size={20} />
               <View style={styles.resultAmount}>
                 <Text style={[styles.resultAmountText, styles.resultAmountHighlight]}>
-                  {toCurrency.symbol} {convertedAmount.toFixed(2)}
+                  {toCurrency.symbol} {convertQuery.data.convertedAmount.toFixed(2)}
                 </Text>
                 <Text style={styles.resultCurrency}>{toCurrency.code}</Text>
               </View>
