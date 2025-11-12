@@ -8,7 +8,7 @@ import {
   Share,
   Platform,
   Modal,
-} from 'react';
+} from 'react-native';
 import { Stack } from 'expo-router';
 import { FileText, Download, TrendingUp, Calendar, User, X } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
