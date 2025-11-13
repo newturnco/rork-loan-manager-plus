@@ -4,7 +4,7 @@ import { formatCurrency, formatDate } from './calculations';
 import * as XLSX from 'xlsx';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
-import { Directory } from 'expo-file-system/next';
+import { Directory, File, Paths } from 'expo-file-system/next';
 
 export interface CustomerReport {
   customer: Customer;
@@ -164,8 +164,12 @@ export async function exportCustomerReportPDF(
     URL.revokeObjectURL(url);
     return url;
   } else {
-    const file = new Directory('cache').getFile(fileName);
+    const file = new File(Paths.cache, fileName);
     await file.write(htmlContent);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'text/html',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -246,8 +250,13 @@ export async function exportCustomerReportXLSX(
     return url;
   } else {
     const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new Directory('cache').getFile(fileName);
-    await file.write(wbout, { encoding: 'base64' });
+    const file = new File(Paths.cache, fileName);
+    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+    await file.write(buffer);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -366,8 +375,13 @@ export async function exportAllReportsXLSX(
     return url;
   } else {
     const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new Directory('cache').getFile(fileName);
-    await file.write(wbout, { encoding: 'base64' });
+    const file = new File(Paths.cache, fileName);
+    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+    await file.write(buffer);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -542,8 +556,12 @@ export async function exportAllReportsPDF(
     URL.revokeObjectURL(url);
     return url;
   } else {
-    const file = new Directory('cache').getFile(fileName);
+    const file = new File(Paths.cache, fileName);
     await file.write(htmlContent);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'text/html',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -594,8 +612,13 @@ export async function exportLoansXLSX(
     return url;
   } else {
     const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new Directory('cache').getFile(fileName);
-    await file.write(wbout, { encoding: 'base64' });
+    const file = new File(Paths.cache, fileName);
+    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+    await file.write(buffer);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -676,8 +699,12 @@ export async function exportLoansPDF(
     URL.revokeObjectURL(url);
     return url;
   } else {
-    const file = new Directory('cache').getFile(fileName);
+    const file = new File(Paths.cache, fileName);
     await file.write(htmlContent);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'text/html',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -738,8 +765,13 @@ export async function exportPaymentsXLSX(
     return url;
   } else {
     const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new Directory('cache').getFile(fileName);
-    await file.write(wbout, { encoding: 'base64' });
+    const file = new File(Paths.cache, fileName);
+    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+    await file.write(buffer);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -848,8 +880,12 @@ export async function exportPaymentsPDF(
     URL.revokeObjectURL(url);
     return url;
   } else {
-    const file = new Directory('cache').getFile(fileName);
+    const file = new File(Paths.cache, fileName);
     await file.write(htmlContent);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'text/html',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -900,8 +936,13 @@ export async function exportCustomersXLSX(
     return url;
   } else {
     const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new Directory('cache').getFile(fileName);
-    await file.write(wbout, { encoding: 'base64' });
+    const file = new File(Paths.cache, fileName);
+    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+    await file.write(buffer);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
@@ -984,8 +1025,12 @@ export async function exportCustomersPDF(
     URL.revokeObjectURL(url);
     return url;
   } else {
-    const file = new Directory('cache').getFile(fileName);
+    const file = new File(Paths.cache, fileName);
     await file.write(htmlContent);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'text/html',
+      dialogTitle: 'Export Report',
+    });
     return file.uri;
   }
 }
