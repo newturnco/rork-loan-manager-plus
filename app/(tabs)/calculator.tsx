@@ -13,11 +13,12 @@ import {
 import { Stack } from 'expo-router';
 import { ArrowRightLeft, RefreshCw, DollarSign, TrendingUp } from 'lucide-react-native';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
-
+import { useResponsive } from '@/utils/responsive';
 import Colors from '@/constants/colors';
 
 export default function CalculatorScreen() {
   const { currency: defaultCurrency, exchangeRates } = useCurrency();
+  const { contentMaxWidth, horizontalPadding } = useResponsive();
   
   const [amount, setAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState<Currency>(defaultCurrency);
@@ -122,7 +123,10 @@ export default function CalculatorScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding, alignSelf: 'center', width: '100%', maxWidth: contentMaxWidth },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
@@ -286,7 +290,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingVertical: 16,
     paddingBottom: 32,
   },
   header: {

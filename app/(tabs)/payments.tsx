@@ -15,11 +15,13 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { Payment } from '@/types/loan';
+import { useResponsive } from '@/utils/responsive';
 
 export default function PaymentsScreen() {
   const router = useRouter();
   const { payments, loans, installments, deletePayment } = useLoans();
   const { currency } = useCurrency();
+  const { contentMaxWidth, horizontalPadding } = useResponsive();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredPayments = payments.filter((payment) => {
@@ -173,7 +175,10 @@ export default function PaymentsScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding, alignSelf: 'center', width: '100%', maxWidth: contentMaxWidth },
+        ]}
       >
         {sortedPayments.length === 0 ? (
           <View style={styles.emptyState}>
@@ -254,7 +259,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingVertical: 16,
     paddingBottom: 32,
   },
   paymentCard: {

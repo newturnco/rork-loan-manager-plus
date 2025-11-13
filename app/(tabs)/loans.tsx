@@ -14,11 +14,13 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { Loan, LoanStatus } from '@/types/loan';
+import { useResponsive } from '@/utils/responsive';
 
 export default function LoansScreen() {
   const router = useRouter();
   const { loans, getInstallmentsByLoan } = useLoans();
   const { currency } = useCurrency();
+  const { isTablet, contentMaxWidth, horizontalPadding } = useResponsive();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<LoanStatus | 'all'>('all');
 
@@ -203,7 +205,10 @@ export default function LoansScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding, alignSelf: 'center', width: '100%', maxWidth: contentMaxWidth },
+        ]}
       >
         {filteredLoans.length === 0 ? (
           <View style={styles.emptyState}>
@@ -294,7 +299,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 12,
+    paddingVertical: 12,
     paddingBottom: 24,
   },
   loanCard: {

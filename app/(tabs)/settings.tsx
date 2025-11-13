@@ -21,6 +21,7 @@ import { useCustomers } from '@/contexts/CustomerContext';
 import { useQueryClient } from '@tanstack/react-query';
 import Colors from '@/constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useResponsive } from '@/utils/responsive';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -32,6 +33,7 @@ export default function SettingsScreen() {
   const { currency, updateCurrency } = useCurrency();
   const queryClient = useQueryClient();
   const { settings: backupSettings, updateSettings: updateBackupSettings, performAutoBackup } = useBackupSettings();
+  const { contentMaxWidth, horizontalPadding } = useResponsive();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showBackupFrequencyModal, setShowBackupFrequencyModal] = useState(false);
@@ -225,7 +227,10 @@ export default function SettingsScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding, alignSelf: 'center', width: '100%', maxWidth: contentMaxWidth },
+        ]}
       >
         <View style={styles.statsSection}>
           <Text style={styles.statsTitle}>App Statistics</Text>
@@ -553,7 +558,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingVertical: 16,
     paddingBottom: 32,
   },
   statsSection: {

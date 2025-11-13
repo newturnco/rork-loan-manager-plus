@@ -19,6 +19,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { exportCustomerReportPDF, exportCustomerReportXLSX, shareReportViaWhatsApp, exportAllReportsXLSX, CustomerReport } from '@/utils/reportGenerator';
+import { useResponsive } from '@/utils/responsive';
 import * as Sharing from 'expo-sharing';
 import { MonthlyReport } from '@/types/loan';
 
@@ -26,6 +27,7 @@ export default function ReportsScreen() {
   const { loans, installments, payments } = useLoans();
   const { customers } = useCustomers();
   const { currency } = useCurrency();
+  const { contentMaxWidth, horizontalPadding } = useResponsive();
   const [showCustomerReport, setShowCustomerReport] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -337,7 +339,10 @@ End Date: ${formatDate(loan.endDate)}
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding, alignSelf: 'center', width: '100%', maxWidth: contentMaxWidth },
+        ]}
       >
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -638,7 +643,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingVertical: 16,
     paddingBottom: 32,
   },
   section: {

@@ -21,11 +21,13 @@ import { useLoans } from '@/contexts/LoanContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate, getDaysUntil } from '@/utils/calculations';
 import Colors from '@/constants/colors';
+import { useResponsive } from '@/utils/responsive';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { dashboardStats, loans, isLoading } = useLoans();
   const { currency } = useCurrency();
+  const { isTablet, contentMaxWidth, horizontalPadding } = useResponsive();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(() => {
@@ -78,12 +80,15 @@ export default function DashboardScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding },
+        ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View style={styles.header}>
+        <View style={[styles.header, isTablet && { alignSelf: 'center', maxWidth: contentMaxWidth, width: '100%' }]}>
           <Text style={styles.greeting}>Welcome Back!</Text>
           <Text style={styles.subtitle}>
             {loans.length === 0
@@ -92,7 +97,7 @@ export default function DashboardScreen() {
           </Text>
         </View>
 
-        <View style={styles.statsGrid}>
+        <View style={[styles.statsGrid, isTablet && { alignSelf: 'center', maxWidth: contentMaxWidth, width: '100%' }]}>
           <StatCard
             label="Total Lent"
             value={formatCurrency(dashboardStats.totalAmountLent, currency.code, currency.symbol)}
@@ -276,7 +281,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingVertical: 16,
     paddingBottom: 32,
   },
   addButton: {
@@ -303,7 +308,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   statCard: {
-    width: '48%',
+    minWidth: 150,
+    flex: 1,
     backgroundColor: Colors.cardBackground,
     borderRadius: 16,
     padding: 16,

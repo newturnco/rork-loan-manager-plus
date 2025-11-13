@@ -12,11 +12,13 @@ import { Search, Plus, User, Phone, Mail } from 'lucide-react-native';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useLoans } from '@/contexts/LoanContext';
 import Colors from '@/constants/colors';
+import { useResponsive } from '@/utils/responsive';
 
 export default function CustomersScreen() {
   const router = useRouter();
   const { customers } = useCustomers();
   const { loans } = useLoans();
+  const { contentMaxWidth, horizontalPadding } = useResponsive();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredCustomers = customers.filter((customer) =>
@@ -118,7 +120,10 @@ export default function CustomersScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding, alignSelf: 'center', width: '100%', maxWidth: contentMaxWidth },
+        ]}
       >
         {filteredCustomers.length === 0 ? (
           <View style={styles.emptyState}>
@@ -191,7 +196,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingVertical: 16,
     paddingBottom: 32,
   },
   statsBar: {
