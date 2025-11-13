@@ -47,9 +47,24 @@ export default function AddCustomerScreen() {
       };
 
       addCustomer(customer);
-      setTimeout(() => {
-        router.back();
-      }, 100);
+      
+      Alert.alert(
+        'Success',
+        'Customer created successfully',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/customers');
+              }
+            },
+          },
+        ],
+        { cancelable: false }
+      );
     } catch (error) {
       console.error('Error creating customer:', error);
       Alert.alert('Error', 'Failed to create customer');

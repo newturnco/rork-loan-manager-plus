@@ -48,19 +48,41 @@ export default function EditCustomerScreen() {
       return;
     }
 
-    const updatedCustomer = {
-      ...customer!,
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      address: address.trim(),
-      notes: notes.trim(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const updatedCustomer = {
+        ...customer!,
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        address: address.trim(),
+        notes: notes.trim(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    updateCustomer(customerId, updatedCustomer);
-    updateLoansByCustomer(updatedCustomer);
-    router.back();
+      updateCustomer(customerId, updatedCustomer);
+      updateLoansByCustomer(updatedCustomer);
+      
+      Alert.alert(
+        'Success',
+        'Customer updated successfully',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/customers');
+              }
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      Alert.alert('Error', 'Failed to update customer');
+    }
   };
 
   const handleDelete = () => {
@@ -75,16 +97,32 @@ export default function EditCustomerScreen() {
           onPress: () => {
             try {
               deleteCustomer(customerId);
-              setTimeout(() => {
-                router.back();
-              }, 100);
+              
+              Alert.alert(
+                'Success',
+                'Customer deleted successfully',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      if (router.canGoBack()) {
+                        router.back();
+                      } else {
+                        router.replace('/(tabs)/customers');
+                      }
+                    },
+                  },
+                ],
+                { cancelable: false }
+              );
             } catch (error) {
               console.error('Error deleting customer:', error);
               Alert.alert('Error', 'Failed to delete customer');
             }
           },
         },
-      ]
+      ],
+      { cancelable: false }
     );
   };
 
