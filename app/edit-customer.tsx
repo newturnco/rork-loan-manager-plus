@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Save, User, Trash2 } from 'lucide-react-native';
@@ -62,23 +63,47 @@ export default function EditCustomerScreen() {
       updateCustomer(customerId, updatedCustomer);
       updateLoansByCustomer(updatedCustomer);
       
-      Alert.alert(
-        'Success',
-        'Customer updated successfully',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)/customers');
-              }
+      if (Platform.OS === 'ios') {
+        setTimeout(() => {
+          Alert.alert(
+            'Success',
+            'Customer updated successfully',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setTimeout(() => {
+                    if (router.canGoBack()) {
+                      router.back();
+                    } else {
+                      router.replace('/(tabs)/customers');
+                    }
+                  }, 100);
+                },
+              },
+            ],
+            { cancelable: false }
+          );
+        }, 100);
+      } else {
+        Alert.alert(
+          'Success',
+          'Customer updated successfully',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)/customers');
+                }
+              },
             },
-          },
-        ],
-        { cancelable: false }
-      );
+          ],
+          { cancelable: false }
+        );
+      }
     } catch (error) {
       console.error('Error updating customer:', error);
       Alert.alert('Error', 'Failed to update customer');
@@ -98,23 +123,47 @@ export default function EditCustomerScreen() {
             try {
               deleteCustomer(customerId);
               
-              Alert.alert(
-                'Success',
-                'Customer deleted successfully',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => {
-                      if (router.canGoBack()) {
-                        router.back();
-                      } else {
-                        router.replace('/(tabs)/customers');
-                      }
+              if (Platform.OS === 'ios') {
+                setTimeout(() => {
+                  Alert.alert(
+                    'Success',
+                    'Customer deleted successfully',
+                    [
+                      {
+                        text: 'OK',
+                        onPress: () => {
+                          setTimeout(() => {
+                            if (router.canGoBack()) {
+                              router.back();
+                            } else {
+                              router.replace('/(tabs)/customers');
+                            }
+                          }, 100);
+                        },
+                      },
+                    ],
+                    { cancelable: false }
+                  );
+                }, 100);
+              } else {
+                Alert.alert(
+                  'Success',
+                  'Customer deleted successfully',
+                  [
+                    {
+                      text: 'OK',
+                      onPress: () => {
+                        if (router.canGoBack()) {
+                          router.back();
+                        } else {
+                          router.replace('/(tabs)/customers');
+                        }
+                      },
                     },
-                  },
-                ],
-                { cancelable: false }
-              );
+                  ],
+                  { cancelable: false }
+                );
+              }
             } catch (error) {
               console.error('Error deleting customer:', error);
               Alert.alert('Error', 'Failed to delete customer');
@@ -147,16 +196,7 @@ export default function EditCustomerScreen() {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
-          headerRight: () => (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-                <Trash2 color="#FF3B30" size={24} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-                <Save color="#FFFFFF" size={24} />
-              </TouchableOpacity>
-            </View>
-          ),
+          headerRight: () => <View style={styles.headerButtons}><TouchableOpacity onPress={handleDelete} style={styles.deleteButton}><Trash2 color="#FF3B30" size={24} /></TouchableOpacity><TouchableOpacity onPress={handleSave} style={styles.saveButton}><Save color="#FFFFFF" size={24} /></TouchableOpacity></View>,
         }}
       />
 

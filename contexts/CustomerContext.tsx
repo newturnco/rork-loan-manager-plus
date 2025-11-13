@@ -40,6 +40,7 @@ export const [CustomerProvider, useCustomers] = createContextHook(() => {
     const newCustomers = [...customers, customer];
     setCustomers(newCustomers);
     saveCustomers(newCustomers);
+    console.log('Customer added:', customer.id, customer.name);
   }, [customers, saveCustomers]);
 
   const updateCustomer = useCallback((customerId: string, updates: Partial<Customer>) => {
@@ -48,10 +49,14 @@ export const [CustomerProvider, useCustomers] = createContextHook(() => {
     );
     setCustomers(newCustomers);
     saveCustomers(newCustomers);
+    console.log('Customer updated:', customerId);
   }, [customers, saveCustomers]);
 
   const deleteCustomer = useCallback((customerId: string) => {
+    console.log('Attempting to delete customer:', customerId);
     const newCustomers = customers.filter((c) => c.id !== customerId);
+    console.log('Customers before delete:', customers.length);
+    console.log('Customers after delete:', newCustomers.length);
     setCustomers(newCustomers);
     saveCustomers(newCustomers);
   }, [customers, saveCustomers]);

@@ -95,14 +95,7 @@ export default function CustomersScreen() {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push('/add-customer')}
-              style={styles.headerButton}
-            >
-              <Plus color="#FFFFFF" size={24} />
-            </TouchableOpacity>
-          ),
+          headerRight: () => <TouchableOpacity onPress={() => router.push('/add-customer')} style={styles.headerButton}><Plus color="#FFFFFF" size={24} /></TouchableOpacity>,
         }}
       />
 

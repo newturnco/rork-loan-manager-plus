@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Save, User } from 'lucide-react-native';
@@ -48,23 +49,47 @@ export default function AddCustomerScreen() {
 
       addCustomer(customer);
       
-      Alert.alert(
-        'Success',
-        'Customer created successfully',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)/customers');
-              }
+      if (Platform.OS === 'ios') {
+        setTimeout(() => {
+          Alert.alert(
+            'Success',
+            'Customer created successfully',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setTimeout(() => {
+                    if (router.canGoBack()) {
+                      router.back();
+                    } else {
+                      router.replace('/(tabs)/customers');
+                    }
+                  }, 100);
+                },
+              },
+            ],
+            { cancelable: false }
+          );
+        }, 100);
+      } else {
+        Alert.alert(
+          'Success',
+          'Customer created successfully',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)/customers');
+                }
+              },
             },
-          },
-        ],
-        { cancelable: false }
-      );
+          ],
+          { cancelable: false }
+        );
+      }
     } catch (error) {
       console.error('Error creating customer:', error);
       Alert.alert('Error', 'Failed to create customer');
@@ -81,11 +106,7 @@ export default function AddCustomerScreen() {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
-          headerRight: () => (
-            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-              <Save color="#FFFFFF" size={24} />
-            </TouchableOpacity>
-          ),
+          headerRight: () => <TouchableOpacity onPress={handleSave} style={styles.saveButton}><Save color="#FFFFFF" size={24} /></TouchableOpacity>,
         }}
       />
 
