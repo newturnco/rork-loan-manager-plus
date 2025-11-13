@@ -16,6 +16,7 @@ import { FileText, Download, TrendingUp, Calendar, User, X, FileSpreadsheet, Sen
 import { useLoans } from '@/contexts/LoanContext';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { exportCustomerReportPDF, exportCustomerReportXLSX, shareReportViaWhatsApp, exportAllReportsXLSX, exportAllReportsPDF, CustomerReport } from '@/utils/reportGenerator';
@@ -27,6 +28,7 @@ export default function ReportsScreen() {
   const { loans, installments, payments } = useLoans();
   const { customers } = useCustomers();
   const { currency } = useCurrency();
+  const { isFeatureLimited, isPremium } = useSubscription();
   const { contentMaxWidth, horizontalPadding } = useResponsive();
   const [showCustomerReport, setShowCustomerReport] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
@@ -141,6 +143,17 @@ export default function ReportsScreen() {
   const [exportMenuVisible, setExportMenuVisible] = useState(false);
 
   const handleExportAllXLSX = async () => {
+    if (isFeatureLimited('exportReports')) {
+      Alert.alert(
+        'Premium Feature',
+        'Export reports is a premium feature. Upgrade to premium to export your reports.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => { /* Router not available here, user can upgrade from settings */ } },
+        ]
+      );
+      return;
+    }
     try {
       setIsExporting(true);
       setExportMenuVisible(false);
@@ -165,6 +178,17 @@ export default function ReportsScreen() {
   };
 
   const handleExportAllPDF = async () => {
+    if (isFeatureLimited('exportReports')) {
+      Alert.alert(
+        'Premium Feature',
+        'Export reports is a premium feature. Upgrade to premium to export your reports.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => { /* Router not available here, user can upgrade from settings */ } },
+        ]
+      );
+      return;
+    }
     try {
       setIsExporting(true);
       setExportMenuVisible(false);
@@ -189,6 +213,17 @@ export default function ReportsScreen() {
   };
 
   const handleExportCustomerPDF = async (report: CustomerReport) => {
+    if (isFeatureLimited('exportReports')) {
+      Alert.alert(
+        'Premium Feature',
+        'Export reports is a premium feature. Upgrade to premium to export your reports.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => { /* Router not available here, user can upgrade from settings */ } },
+        ]
+      );
+      return;
+    }
     try {
       setIsExporting(true);
       const fileUri = await exportCustomerReportPDF(report, currency);
@@ -212,6 +247,17 @@ export default function ReportsScreen() {
   };
 
   const handleExportCustomerXLSX = async (report: CustomerReport) => {
+    if (isFeatureLimited('exportReports')) {
+      Alert.alert(
+        'Premium Feature',
+        'Export reports is a premium feature. Upgrade to premium to export your reports.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => { /* Router not available here, user can upgrade from settings */ } },
+        ]
+      );
+      return;
+    }
     try {
       setIsExporting(true);
       const fileUri = await exportCustomerReportXLSX(report, currency);

@@ -11,12 +11,14 @@ import {
 import { Stack, useRouter } from 'expo-router';
 import { Save, User } from 'lucide-react-native';
 import { useCustomers } from '@/contexts/CustomerContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import Colors from '@/constants/colors';
 import { Customer } from '@/types/customer';
 
 export default function AddCustomerScreen() {
   const router = useRouter();
-  const { addCustomer } = useCustomers();
+  const { addCustomer, customers } = useCustomers();
+  const { features, isPremium } = useSubscription();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -31,6 +33,18 @@ export default function AddCustomerScreen() {
     }
     if (!phone.trim()) {
       Alert.alert('Error', 'Please enter customer phone number');
+      return;
+    }
+
+    if (!isPremium && features.maxCustomers && customers.length >= features.maxCustomers) {
+      Alert.alert(
+        'Limit Reached',
+        `Free plan is limited to ${features.maxCustomers} customers. Upgrade to premium for unlimited customers.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/paywall') },
+        ]
+      );
       return;
     }
 

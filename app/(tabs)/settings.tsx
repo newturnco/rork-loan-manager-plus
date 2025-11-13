@@ -11,12 +11,13 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { Stack } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload, Clock, Calendar as CalendarIcon } from 'lucide-react-native';
+import { Stack, useRouter } from 'expo-router';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload, Clock, Calendar as CalendarIcon, Crown } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
 import { useBackupSettings, BackupFrequency } from '@/contexts/BackupSettingsContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useQueryClient } from '@tanstack/react-query';
 import Colors from '@/constants/colors';
@@ -25,12 +26,15 @@ import { useResponsive } from '@/utils/responsive';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { loans, installments, payments } = useLoans();
   const { customers } = useCustomers();
   const { settings, updateSettings } = useAlertSettings();
   const { currency, updateCurrency } = useCurrency();
+  const { subscription, isPremium, features, isUpgrading } = useSubscription();
   const queryClient = useQueryClient();
   const { settings: backupSettings, updateSettings: updateBackupSettings, performAutoBackup } = useBackupSettings();
   const { contentMaxWidth, horizontalPadding } = useResponsive();
@@ -241,11 +245,44 @@ export default function SettingsScreen() {
           { paddingHorizontal: horizontalPadding, alignSelf: 'center', width: '100%', maxWidth: contentMaxWidth },
         ]}
       >
+        <TouchableOpacity 
+          style={[styles.premiumCard, isPremium && styles.premiumCardActive]}
+          onPress={() => !isPremium && router.push('/paywall')}
+          disabled={isUpgrading}
+        >
+          <LinearGradient
+            colors={isPremium ? [Colors.warning, Colors.warning + 'DD'] : [Colors.primary, Colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.premiumCardGradient}
+          >
+            <View style={styles.premiumCardContent}>
+              <Crown color="#FFFFFF" size={32} />
+              <View style={styles.premiumCardText}>
+                <Text style={styles.premiumCardTitle}>
+                  {isPremium ? "Premium Active" : "Upgrade to Premium"}
+                </Text>
+                <Text style={styles.premiumCardSubtitle}>
+                  {isPremium 
+                    ? subscription.isLifetime 
+                      ? "Lifetime Access" 
+                      : `Expires ${subscription.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString() : 'Never'}`
+                    : "Unlock all features and unlimited access"
+                  }
+                </Text>
+              </View>
+              {!isPremium && <ChevronRight color="#FFFFFF" size={24} />}
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
         <View style={styles.statsSection}>
-          <Text style={styles.statsTitle}>App Statistics</Text>
+          <Text style={styles.statsTitle}>Usage Statistics</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{loans.length}</Text>
+              <Text style={styles.statValue}>
+                {loans.length}{features.maxLoans ? ` / ${features.maxLoans}` : ''}
+              </Text>
               <Text style={styles.statLabel}>Total Loans</Text>
             </View>
             <View style={styles.statItem}>
@@ -257,7 +294,9 @@ export default function SettingsScreen() {
               <Text style={styles.statLabel}>Payments</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{customers.length}</Text>
+              <Text style={styles.statValue}>
+                {customers.length}{features.maxCustomers ? ` / ${features.maxCustomers}` : ''}
+              </Text>
               <Text style={styles.statLabel}>Customers</Text>
             </View>
           </View>
@@ -804,5 +843,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600' as const,
     color: '#FFFFFF',
+  },
+  premiumCard: {
+    borderRadius: 16,
+    marginBottom: 24,
+    overflow: 'hidden',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  premiumCardActive: {
+    opacity: 0.9,
+  },
+  premiumCardGradient: {
+    padding: 20,
+  },
+  premiumCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  premiumCardText: {
+    flex: 1,
+  },
+  premiumCardTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  premiumCardSubtitle: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    opacity: 0.9,
   },
 });

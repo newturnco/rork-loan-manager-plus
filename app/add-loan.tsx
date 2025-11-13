@@ -16,6 +16,7 @@ import { Save, Calendar, DollarSign, User, Plus, ChevronDown } from 'lucide-reac
 import { useLoans } from '@/contexts/LoanContext';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import Colors from '@/constants/colors';
 import { Loan, InterestType, InstallmentFrequency } from '@/types/loan';
 import { calculateInterestRate, calculateInterestAmount, calculateDurationInMonths, formatDateToISO, parseDateDDMMYYYY } from '@/utils/calculations';
@@ -23,9 +24,10 @@ import DatePicker from '@/components/DatePicker';
 
 export default function AddLoanScreen() {
   const router = useRouter();
-  const { addLoan } = useLoans();
+  const { addLoan, loans } = useLoans();
   const { customers } = useCustomers();
   const { currency } = useCurrency();
+  const { features, isPremium } = useSubscription();
 
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -125,6 +127,18 @@ export default function AddLoanScreen() {
   const handleSave = () => {
     if (!selectedCustomer) {
       Alert.alert('Error', 'Please select a customer');
+      return;
+    }
+
+    if (!isPremium && features.maxLoans && loans.length >= features.maxLoans) {
+      Alert.alert(
+        'Limit Reached',
+        `Free plan is limited to ${features.maxLoans} loans. Upgrade to premium for unlimited loans.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/paywall') },
+        ]
+      );
       return;
     }
     if (!principalAmount || parseFloat(principalAmount) <= 0) {

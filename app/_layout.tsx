@@ -8,6 +8,7 @@ import { CustomerProvider } from "@/contexts/CustomerContext";
 import { AlertSettingsProvider } from "@/contexts/AlertSettingsContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { BackupSettingsProvider } from "@/contexts/BackupSettingsContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 
@@ -61,6 +62,13 @@ function RootLayoutNav() {
           title: "Edit Loan"
         }} 
       />
+      <Stack.Screen 
+        name="paywall" 
+        options={{ 
+          presentation: "modal",
+          title: "Upgrade to Premium"
+        }} 
+      />
     </Stack>
   );
 }
@@ -73,19 +81,21 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <CurrencyProvider>
-          <AlertSettingsProvider>
-            <BackupSettingsProvider>
-              <CustomerProvider>
-                <LoanProvider>
-                  <GestureHandlerRootView style={{ flex: 1 }}>
-                    <RootLayoutNav />
-                  </GestureHandlerRootView>
-                </LoanProvider>
-              </CustomerProvider>
-            </BackupSettingsProvider>
-          </AlertSettingsProvider>
-        </CurrencyProvider>
+        <SubscriptionProvider>
+          <CurrencyProvider>
+            <AlertSettingsProvider>
+              <BackupSettingsProvider>
+                <CustomerProvider>
+                  <LoanProvider>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                      <RootLayoutNav />
+                    </GestureHandlerRootView>
+                  </LoanProvider>
+                </CustomerProvider>
+              </BackupSettingsProvider>
+            </AlertSettingsProvider>
+          </CurrencyProvider>
+        </SubscriptionProvider>
       </trpc.Provider>
     </QueryClientProvider>
   );
