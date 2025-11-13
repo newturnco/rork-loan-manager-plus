@@ -159,13 +159,15 @@ export default function ReportsScreen() {
       setExportMenuVisible(false);
       const fileUri = await exportAllReportsXLSX(customerReports, overallStats, currency);
       
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          dialogTitle: 'Export Complete Report (XLSX)',
-          UTI: 'org.openxmlformats.spreadsheetml.sheet',
-        });
+      if (Platform.OS !== 'web') {
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            dialogTitle: 'Export Complete Report (XLSX)',
+            UTI: 'org.openxmlformats.spreadsheetml.sheet',
+          });
+        }
       }
       
       Alert.alert('Success', 'XLSX report exported successfully!');
@@ -194,13 +196,15 @@ export default function ReportsScreen() {
       setExportMenuVisible(false);
       const fileUri = await exportAllReportsPDF(customerReports, overallStats, currency);
       
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'text/html',
-          dialogTitle: 'Export Complete Report (PDF)',
-          UTI: 'public.html',
-        });
+      if (Platform.OS !== 'web') {
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/html',
+            dialogTitle: 'Export Complete Report (PDF)',
+            UTI: 'public.html',
+          });
+        }
       }
       
       Alert.alert('Success', 'PDF report exported successfully!');
@@ -228,13 +232,15 @@ export default function ReportsScreen() {
       setIsExporting(true);
       const fileUri = await exportCustomerReportPDF(report, currency);
       
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'text/html',
-          dialogTitle: 'Export Customer Report (HTML)',
-          UTI: 'public.html',
-        });
+      if (Platform.OS !== 'web') {
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/html',
+            dialogTitle: 'Export Customer Report (HTML)',
+            UTI: 'public.html',
+          });
+        }
       }
       
       Alert.alert('Success', 'Customer report exported successfully!');
@@ -262,13 +268,15 @@ export default function ReportsScreen() {
       setIsExporting(true);
       const fileUri = await exportCustomerReportXLSX(report, currency);
       
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          dialogTitle: 'Export Customer Report',
-          UTI: 'org.openxmlformats.spreadsheetml.sheet',
-        });
+      if (Platform.OS !== 'web') {
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            dialogTitle: 'Export Customer Report',
+            UTI: 'org.openxmlformats.spreadsheetml.sheet',
+          });
+        }
       }
       
       Alert.alert('Success', 'Customer report exported successfully!');
