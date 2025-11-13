@@ -170,10 +170,14 @@ export default function ReportsScreen() {
         }
       }
       
-      Alert.alert('Success', 'XLSX report exported successfully!');
+      setTimeout(() => {
+        Alert.alert('Success', 'XLSX report exported successfully!');
+      }, 100);
     } catch (error) {
       console.error('Error exporting XLSX:', error);
-      Alert.alert('Error', 'Failed to export XLSX report');
+      setTimeout(() => {
+        Alert.alert('Error', 'Failed to export XLSX report');
+      }, 100);
     } finally {
       setIsExporting(false);
     }
@@ -207,10 +211,14 @@ export default function ReportsScreen() {
         }
       }
       
-      Alert.alert('Success', 'PDF report exported successfully!');
+      setTimeout(() => {
+        Alert.alert('Success', 'PDF report exported successfully!');
+      }, 100);
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      Alert.alert('Error', 'Failed to export PDF report');
+      setTimeout(() => {
+        Alert.alert('Error', 'Failed to export PDF report');
+      }, 100);
     } finally {
       setIsExporting(false);
     }
@@ -243,10 +251,14 @@ export default function ReportsScreen() {
         }
       }
       
-      Alert.alert('Success', 'Customer report exported successfully!');
+      setTimeout(() => {
+        Alert.alert('Success', 'Customer report exported successfully!');
+      }, 100);
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      Alert.alert('Error', 'Failed to export report');
+      setTimeout(() => {
+        Alert.alert('Error', 'Failed to export report');
+      }, 100);
     } finally {
       setIsExporting(false);
     }
@@ -279,10 +291,14 @@ export default function ReportsScreen() {
         }
       }
       
-      Alert.alert('Success', 'Customer report exported successfully!');
+      setTimeout(() => {
+        Alert.alert('Success', 'Customer report exported successfully!');
+      }, 100);
     } catch (error) {
       console.error('Error exporting XLSX:', error);
-      Alert.alert('Error', 'Failed to export report');
+      setTimeout(() => {
+        Alert.alert('Error', 'Failed to export report');
+      }, 100);
     } finally {
       setIsExporting(false);
     }
@@ -294,10 +310,14 @@ export default function ReportsScreen() {
       const fileUri = await exportCustomerReportXLSX(report, currency);
       await shareReportViaWhatsApp(fileUri, report.customer.phone, 
         `Hello ${report.customer.name}, please find your financial report attached.`);
-      Alert.alert('Success', 'Opening WhatsApp...');
+      setTimeout(() => {
+        Alert.alert('Success', 'Opening WhatsApp...');
+      }, 100);
     } catch (error) {
       console.error('Error sharing via WhatsApp:', error);
-      Alert.alert('Error', 'Failed to share via WhatsApp');
+      setTimeout(() => {
+        Alert.alert('Error', 'Failed to share via WhatsApp');
+      }, 100);
     } finally {
       setIsExporting(false);
     }
