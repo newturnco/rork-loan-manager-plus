@@ -157,7 +157,7 @@ export default function SettingsScreen() {
   const handleClearData = () => {
     Alert.alert(
       'Clear All Data',
-      'Are you sure you want to delete all loans, installments, and payments? This action cannot be undone.',
+      'Are you sure you want to delete all loans, installments, payments, and customers? This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -165,10 +165,19 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['@loans', '@installments', '@payments']);
+              console.log('[Settings] Clearing all data...');
+              await AsyncStorage.multiRemove(['@loans', '@installments', '@payments', '@customers']);
+              console.log('[Settings] AsyncStorage cleared');
+              
+              queryClient.invalidateQueries({ queryKey: ['loans'] });
+              queryClient.invalidateQueries({ queryKey: ['installments'] });
+              queryClient.invalidateQueries({ queryKey: ['payments'] });
+              queryClient.invalidateQueries({ queryKey: ['customers'] });
+              console.log('[Settings] Query cache invalidated');
+              
               Alert.alert('Success', 'All data has been cleared');
             } catch (error) {
-              console.error('Error clearing data:', error);
+              console.error('[Settings] Error clearing data:', error);
               Alert.alert('Error', 'Failed to clear data');
             }
           },
