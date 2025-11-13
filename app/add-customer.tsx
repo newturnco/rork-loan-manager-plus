@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Save, User } from 'lucide-react-native';
@@ -25,7 +24,7 @@ export default function AddCustomerScreen() {
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter customer name');
       return;
@@ -47,51 +46,24 @@ export default function AddCustomerScreen() {
         updatedAt: new Date().toISOString(),
       };
 
+      console.log('[iOS] Adding customer:', customer.id);
       addCustomer(customer);
       
-      if (Platform.OS === 'ios') {
-        setTimeout(() => {
-          Alert.alert(
-            'Success',
-            'Customer created successfully',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  setTimeout(() => {
-                    if (router.canGoBack()) {
-                      router.back();
-                    } else {
-                      router.replace('/(tabs)/customers');
-                    }
-                  }, 100);
-                },
-              },
-            ],
-            { cancelable: false }
-          );
-        }, 100);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('[iOS] Customer added, navigating back');
+      
+      if (router.canGoBack()) {
+        router.back();
       } else {
-        Alert.alert(
-          'Success',
-          'Customer created successfully',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace('/(tabs)/customers');
-                }
-              },
-            },
-          ],
-          { cancelable: false }
-        );
+        router.replace('/(tabs)/customers');
       }
+
+      requestAnimationFrame(() => {
+        Alert.alert('Success', 'Customer created successfully');
+      });
     } catch (error) {
-      console.error('Error creating customer:', error);
+      console.error('[iOS] Error creating customer:', error);
       Alert.alert('Error', 'Failed to create customer');
     }
   };

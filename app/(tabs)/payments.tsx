@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Search, Plus, DollarSign, Calendar, Trash2 } from 'lucide-react-native';
@@ -44,9 +43,19 @@ export default function PaymentsScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deletePayment(payment.id),
+          onPress: async () => {
+            try {
+              console.log('[iOS] Deleting payment from payments tab:', payment.id);
+              await deletePayment(payment.id);
+              console.log('[iOS] Payment deleted from payments tab');
+            } catch (error) {
+              console.error('[iOS] Error deleting payment from payments tab:', error);
+              Alert.alert('Error', 'Failed to delete payment');
+            }
+          },
         },
-      ]
+      ],
+      { cancelable: false }
     );
   };
 
@@ -123,17 +132,7 @@ export default function PaymentsScreen() {
           headerTintColor: '#FFFFFF',
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => {
-                if (Platform.OS === 'android') {
-                  requestAnimationFrame(() => {
-                    setTimeout(() => {
-                      router.push('/add-payment');
-                    }, 0);
-                  });
-                } else {
-                  router.push('/add-payment');
-                }
-              }}
+              onPress={() => router.push('/add-payment')}
               style={styles.headerButton}
             >
               <Plus color="#FFFFFF" size={24} />

@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  Platform,
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Save, User, Trash2 } from 'lucide-react-native';
@@ -39,7 +38,7 @@ export default function EditCustomerScreen() {
     }
   }, [customer]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter customer name');
       return;
@@ -60,52 +59,25 @@ export default function EditCustomerScreen() {
         updatedAt: new Date().toISOString(),
       };
 
+      console.log('[iOS] Updating customer:', customerId);
       updateCustomer(customerId, updatedCustomer);
       updateLoansByCustomer(updatedCustomer);
       
-      if (Platform.OS === 'ios') {
-        setTimeout(() => {
-          Alert.alert(
-            'Success',
-            'Customer updated successfully',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  setTimeout(() => {
-                    if (router.canGoBack()) {
-                      router.back();
-                    } else {
-                      router.replace('/(tabs)/customers');
-                    }
-                  }, 100);
-                },
-              },
-            ],
-            { cancelable: false }
-          );
-        }, 100);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('[iOS] Customer updated, navigating back');
+      
+      if (router.canGoBack()) {
+        router.back();
       } else {
-        Alert.alert(
-          'Success',
-          'Customer updated successfully',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace('/(tabs)/customers');
-                }
-              },
-            },
-          ],
-          { cancelable: false }
-        );
+        router.replace('/(tabs)/customers');
       }
+
+      requestAnimationFrame(() => {
+        Alert.alert('Success', 'Customer updated successfully');
+      });
     } catch (error) {
-      console.error('Error updating customer:', error);
+      console.error('[iOS] Error updating customer:', error);
       Alert.alert('Error', 'Failed to update customer');
     }
   };
@@ -119,53 +91,26 @@ export default function EditCustomerScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             try {
-              deleteCustomer(customerId);
+              console.log('[iOS] Deleting customer:', customerId);
+              await deleteCustomer(customerId);
               
-              if (Platform.OS === 'ios') {
-                setTimeout(() => {
-                  Alert.alert(
-                    'Success',
-                    'Customer deleted successfully',
-                    [
-                      {
-                        text: 'OK',
-                        onPress: () => {
-                          setTimeout(() => {
-                            if (router.canGoBack()) {
-                              router.back();
-                            } else {
-                              router.replace('/(tabs)/customers');
-                            }
-                          }, 100);
-                        },
-                      },
-                    ],
-                    { cancelable: false }
-                  );
-                }, 100);
+              await new Promise(resolve => setTimeout(resolve, 150));
+              
+              console.log('[iOS] Customer deleted, navigating back');
+              
+              if (router.canGoBack()) {
+                router.back();
               } else {
-                Alert.alert(
-                  'Success',
-                  'Customer deleted successfully',
-                  [
-                    {
-                      text: 'OK',
-                      onPress: () => {
-                        if (router.canGoBack()) {
-                          router.back();
-                        } else {
-                          router.replace('/(tabs)/customers');
-                        }
-                      },
-                    },
-                  ],
-                  { cancelable: false }
-                );
+                router.replace('/(tabs)/customers');
               }
+
+              requestAnimationFrame(() => {
+                Alert.alert('Success', 'Customer deleted successfully');
+              });
             } catch (error) {
-              console.error('Error deleting customer:', error);
+              console.error('[iOS] Error deleting customer:', error);
               Alert.alert('Error', 'Failed to delete customer');
             }
           },

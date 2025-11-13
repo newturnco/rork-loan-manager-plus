@@ -52,14 +52,21 @@ export const [CustomerProvider, useCustomers] = createContextHook(() => {
     console.log('Customer updated:', customerId);
   }, [customers, saveCustomers]);
 
-  const deleteCustomer = useCallback((customerId: string) => {
-    console.log('Attempting to delete customer:', customerId);
+  const deleteCustomer = useCallback(async (customerId: string) => {
+    console.log('[CustomerContext] Attempting to delete customer:', customerId);
     const newCustomers = customers.filter((c) => c.id !== customerId);
-    console.log('Customers before delete:', customers.length);
-    console.log('Customers after delete:', newCustomers.length);
+    console.log('[CustomerContext] Customers before delete:', customers.length);
+    console.log('[CustomerContext] Customers after delete:', newCustomers.length);
     setCustomers(newCustomers);
-    saveCustomers(newCustomers);
-  }, [customers, saveCustomers]);
+    try {
+      await AsyncStorage.setItem(CUSTOMERS_KEY, JSON.stringify(newCustomers));
+      console.log('[CustomerContext] Customer deleted and saved to storage');
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    } catch (error) {
+      console.error('[CustomerContext] Error saving after delete:', error);
+      throw error;
+    }
+  }, [customers, queryClient]);
 
   const getCustomerById = useCallback((customerId: string) => {
     return customers.find((c) => c.id === customerId);

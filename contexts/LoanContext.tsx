@@ -119,19 +119,30 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
     }
   }, [loans]);
 
-  const deleteLoan = useCallback((loanId: string) => {
+  const deleteLoan = useCallback(async (loanId: string) => {
+    console.log('[LoanContext] Deleting loan:', loanId);
     const newLoans = loans.filter((l) => l.id !== loanId);
     setLoans(newLoans);
-    saveLoansMutation.mutate(newLoans);
 
     const newInstallments = installments.filter((i) => i.loanId !== loanId);
     setInstallments(newInstallments);
-    saveInstallmentsMutation.mutate(newInstallments);
 
     const newPayments = payments.filter((p) => p.loanId !== loanId);
     setPayments(newPayments);
-    savePaymentsMutation.mutate(newPayments);
-  }, [loans, installments, payments]);
+
+    try {
+      await AsyncStorage.setItem(LOANS_KEY, JSON.stringify(newLoans));
+      await AsyncStorage.setItem(INSTALLMENTS_KEY, JSON.stringify(newInstallments));
+      await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(newPayments));
+      console.log('[LoanContext] Loan and related data deleted from storage');
+      queryClient.invalidateQueries({ queryKey: ['loans'] });
+      queryClient.invalidateQueries({ queryKey: ['installments'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+    } catch (error) {
+      console.error('[LoanContext] Error deleting loan:', error);
+      throw error;
+    }
+  }, [loans, installments, payments, queryClient]);
 
   const recordPayment = useCallback((installmentId: string, payment: Payment) => {
     const newPayments = [...payments, payment];
@@ -227,27 +238,41 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
       .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
   }, [payments]);
 
-  const deletePayment = useCallback((paymentId: string) => {
+  const deletePayment = useCallback(async (paymentId: string) => {
+    console.log('[LoanContext] Deleting payment:', paymentId);
     const payment = payments.find((p) => p.id === paymentId);
-    if (!payment) return;
+    if (!payment) {
+      console.log('[LoanContext] Payment not found:', paymentId);
+      return;
+    }
 
     const newPayments = payments.filter((p) => p.id !== paymentId);
     setPayments(newPayments);
-    savePaymentsMutation.mutate(newPayments);
 
     const installment = installments.find((i) => i.id === payment.installmentId);
+    let newInstallments = installments;
     if (installment) {
       const updatedInstallment = {
         ...installment,
         paidAmount: Math.max(0, installment.paidAmount - payment.amount),
       };
-      const newInstallments = installments.map((i) =>
+      newInstallments = installments.map((i) =>
         i.id === payment.installmentId ? updateInstallmentStatus(updatedInstallment) : i
       );
       setInstallments(newInstallments);
-      saveInstallmentsMutation.mutate(newInstallments);
     }
-  }, [payments, installments]);
+
+    try {
+      await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(newPayments));
+      await AsyncStorage.setItem(INSTALLMENTS_KEY, JSON.stringify(newInstallments));
+      console.log('[LoanContext] Payment deleted from storage');
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['installments'] });
+    } catch (error) {
+      console.error('[LoanContext] Error deleting payment:', error);
+      throw error;
+    }
+  }, [payments, installments, queryClient]);
 
   return {
     loans,
