@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system/next';
+import * as Print from 'expo-print';
 
 export interface CustomerReport {
   customer: Customer;
@@ -150,29 +151,26 @@ export async function exportCustomerReportPDF(
   currency: { code: string; symbol: string; name: string }
 ): Promise<string> {
   const htmlContent = await generateCustomerPDF(report, currency);
-  const fileName = `customer_report_${report.customer.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+  const fileName = `customer_report_${report.customer.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   
   if (Platform.OS === 'web') {
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    return url;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+    return '';
   }
   
-  const file = new File(Paths.cache, fileName);
-  await file.create({ overwrite: true });
-  await file.write(htmlContent);
-  await Sharing.shareAsync(file.uri, {
-    mimeType: 'text/html',
+  const { uri } = await Print.printToFileAsync({ html: htmlContent });
+  await Sharing.shareAsync(uri, {
+    mimeType: 'application/pdf',
     dialogTitle: 'Export Report',
   });
-  return file.uri;
+  return uri;
 }
 
 export async function exportCustomerReportXLSX(
@@ -545,29 +543,26 @@ export async function exportAllReportsPDF(
     </html>
   `;
 
-  const fileName = `complete_report_${new Date().toISOString().split('T')[0]}.html`;
+  const fileName = `complete_report_${new Date().toISOString().split('T')[0]}.pdf`;
   
   if (Platform.OS === 'web') {
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    return url;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+    return '';
   }
   
-  const file = new File(Paths.cache, fileName);
-  await file.create({ overwrite: true });
-  await file.write(htmlContent);
-  await Sharing.shareAsync(file.uri, {
-    mimeType: 'text/html',
+  const { uri } = await Print.printToFileAsync({ html: htmlContent });
+  await Sharing.shareAsync(uri, {
+    mimeType: 'application/pdf',
     dialogTitle: 'Export Report',
   });
-  return file.uri;
+  return uri;
 }
 
 export async function exportLoansXLSX(
@@ -690,29 +685,26 @@ export async function exportLoansPDF(
     </html>
   `;
 
-  const fileName = `loans_report_${new Date().toISOString().split('T')[0]}.html`;
+  const fileName = `loans_report_${new Date().toISOString().split('T')[0]}.pdf`;
   
   if (Platform.OS === 'web') {
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    return url;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+    return '';
   }
   
-  const file = new File(Paths.cache, fileName);
-  await file.create({ overwrite: true });
-  await file.write(htmlContent);
-  await Sharing.shareAsync(file.uri, {
-    mimeType: 'text/html',
+  const { uri } = await Print.printToFileAsync({ html: htmlContent });
+  await Sharing.shareAsync(uri, {
+    mimeType: 'application/pdf',
     dialogTitle: 'Export Report',
   });
-  return file.uri;
+  return uri;
 }
 
 export async function exportPaymentsXLSX(
@@ -873,29 +865,26 @@ export async function exportPaymentsPDF(
     </html>
   `;
 
-  const fileName = `payments_report_${new Date().toISOString().split('T')[0]}.html`;
+  const fileName = `payments_report_${new Date().toISOString().split('T')[0]}.pdf`;
   
   if (Platform.OS === 'web') {
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    return url;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+    return '';
   }
   
-  const file = new File(Paths.cache, fileName);
-  await file.create({ overwrite: true });
-  await file.write(htmlContent);
-  await Sharing.shareAsync(file.uri, {
-    mimeType: 'text/html',
+  const { uri } = await Print.printToFileAsync({ html: htmlContent });
+  await Sharing.shareAsync(uri, {
+    mimeType: 'application/pdf',
     dialogTitle: 'Export Report',
   });
-  return file.uri;
+  return uri;
 }
 
 export async function exportCustomersXLSX(
@@ -1020,27 +1009,24 @@ export async function exportCustomersPDF(
     </html>
   `;
 
-  const fileName = `customers_report_${new Date().toISOString().split('T')[0]}.html`;
+  const fileName = `customers_report_${new Date().toISOString().split('T')[0]}.pdf`;
   
   if (Platform.OS === 'web') {
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    return url;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+    return '';
   }
   
-  const file = new File(Paths.cache, fileName);
-  await file.create({ overwrite: true });
-  await file.write(htmlContent);
-  await Sharing.shareAsync(file.uri, {
-    mimeType: 'text/html',
+  const { uri } = await Print.printToFileAsync({ html: htmlContent });
+  await Sharing.shareAsync(uri, {
+    mimeType: 'application/pdf',
     dialogTitle: 'Export Report',
   });
-  return file.uri;
+  return uri;
 }
