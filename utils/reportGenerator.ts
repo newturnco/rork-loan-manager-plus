@@ -165,8 +165,7 @@ export async function exportCustomerReportPDF(
     return url;
   }
   
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'text/html');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   await file.write(htmlContent);
   await Sharing.shareAsync(file.uri, {
@@ -253,8 +252,7 @@ export async function exportCustomerReportXLSX(
   }
   
   const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
   await file.write(buffer);
@@ -380,8 +378,7 @@ export async function exportAllReportsXLSX(
   }
   
   const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
   await file.write(buffer);
@@ -563,8 +560,7 @@ export async function exportAllReportsPDF(
     return url;
   }
   
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'text/html');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   await file.write(htmlContent);
   await Sharing.shareAsync(file.uri, {
@@ -621,8 +617,7 @@ export async function exportLoansXLSX(
   }
   
   const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
   await file.write(buffer);
@@ -710,8 +705,7 @@ export async function exportLoansPDF(
     return url;
   }
   
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'text/html');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   await file.write(htmlContent);
   await Sharing.shareAsync(file.uri, {
@@ -778,8 +772,7 @@ export async function exportPaymentsXLSX(
   }
   
   const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
   await file.write(buffer);
@@ -895,8 +888,7 @@ export async function exportPaymentsPDF(
     return url;
   }
   
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'text/html');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   await file.write(htmlContent);
   await Sharing.shareAsync(file.uri, {
@@ -953,8 +945,7 @@ export async function exportCustomersXLSX(
   }
   
   const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
   await file.write(buffer);
@@ -1044,8 +1035,7 @@ export async function exportCustomersPDF(
     return url;
   }
   
-  const cacheDir = new Directory(Paths.cache);
-  const file = cacheDir.createFile(fileName, 'text/html');
+  const file = new File(Paths.cache, fileName);
   await file.create({ overwrite: true });
   await file.write(htmlContent);
   await Sharing.shareAsync(file.uri, {
