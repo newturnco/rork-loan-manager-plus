@@ -163,15 +163,16 @@ export async function exportCustomerReportPDF(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const file = new File(Paths.cache, fileName);
-    await file.write(htmlContent);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'text/html',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'text/html');
+  await file.write(htmlContent);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'text/html',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportCustomerReportXLSX(
@@ -248,17 +249,18 @@ export async function exportCustomerReportXLSX(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new File(Paths.cache, fileName);
-    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
-    await file.write(buffer);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+  await file.write(buffer);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function shareReportViaWhatsApp(
@@ -373,17 +375,18 @@ export async function exportAllReportsXLSX(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new File(Paths.cache, fileName);
-    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
-    await file.write(buffer);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+  await file.write(buffer);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportAllReportsPDF(
@@ -555,15 +558,16 @@ export async function exportAllReportsPDF(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const file = new File(Paths.cache, fileName);
-    await file.write(htmlContent);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'text/html',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'text/html');
+  await file.write(htmlContent);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'text/html',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportLoansXLSX(
@@ -610,17 +614,18 @@ export async function exportLoansXLSX(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new File(Paths.cache, fileName);
-    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
-    await file.write(buffer);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+  await file.write(buffer);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportLoansPDF(
@@ -698,15 +703,16 @@ export async function exportLoansPDF(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const file = new File(Paths.cache, fileName);
-    await file.write(htmlContent);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'text/html',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'text/html');
+  await file.write(htmlContent);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'text/html',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportPaymentsXLSX(
@@ -763,17 +769,18 @@ export async function exportPaymentsXLSX(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new File(Paths.cache, fileName);
-    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
-    await file.write(buffer);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+  await file.write(buffer);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportPaymentsPDF(
@@ -879,15 +886,16 @@ export async function exportPaymentsPDF(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const file = new File(Paths.cache, fileName);
-    await file.write(htmlContent);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'text/html',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'text/html');
+  await file.write(htmlContent);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'text/html',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportCustomersXLSX(
@@ -934,17 +942,18 @@ export async function exportCustomersXLSX(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-    const file = new File(Paths.cache, fileName);
-    const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
-    await file.write(buffer);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const buffer = Uint8Array.from(atob(wbout), c => c.charCodeAt(0));
+  await file.write(buffer);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
 
 export async function exportCustomersPDF(
@@ -1024,13 +1033,14 @@ export async function exportCustomersPDF(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     return url;
-  } else {
-    const file = new File(Paths.cache, fileName);
-    await file.write(htmlContent);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'text/html',
-      dialogTitle: 'Export Report',
-    });
-    return file.uri;
   }
+  
+  const cacheDir = new Directory(Paths.cache);
+  const file = cacheDir.createFile(fileName, 'text/html');
+  await file.write(htmlContent);
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'text/html',
+    dialogTitle: 'Export Report',
+  });
+  return file.uri;
 }
