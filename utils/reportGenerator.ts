@@ -154,7 +154,7 @@ export async function exportCustomerReportPDF(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
-    encoding: FileSystem.EncodingType.UTF8,
+    encoding: 'utf8' as any,
   });
   
   return fileUri;
@@ -225,7 +225,7 @@ export async function exportCustomerReportXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -334,7 +334,7 @@ export async function exportAllReportsXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -499,7 +499,7 @@ export async function exportAllReportsPDF(
   const fileName = `complete_report_${new Date().toISOString().split('T')[0]}.html`;
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
-    encoding: FileSystem.EncodingType.UTF8,
+    encoding: 'utf8' as any,
   });
   
   return fileUri;
@@ -540,7 +540,7 @@ export async function exportLoansXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -611,7 +611,7 @@ export async function exportLoansPDF(
   const fileName = `loans_report_${new Date().toISOString().split('T')[0]}.html`;
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
-    encoding: FileSystem.EncodingType.UTF8,
+    encoding: 'utf8' as any,
   });
   
   return fileUri;
@@ -662,7 +662,7 @@ export async function exportPaymentsXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -761,7 +761,7 @@ export async function exportPaymentsPDF(
   const fileName = `payments_report_${new Date().toISOString().split('T')[0]}.html`;
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
-    encoding: FileSystem.EncodingType.UTF8,
+    encoding: 'utf8' as any,
   });
   
   return fileUri;
@@ -802,7 +802,7 @@ export async function exportCustomersXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -875,7 +875,7 @@ export async function exportCustomersPDF(
   const fileName = `customers_report_${new Date().toISOString().split('T')[0]}.html`;
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
-    encoding: FileSystem.EncodingType.UTF8,
+    encoding: 'utf8' as any,
   });
   
   return fileUri;
