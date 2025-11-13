@@ -18,7 +18,7 @@ import { useCustomers } from '@/contexts/CustomerContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
-import { exportCustomerReportPDF, exportCustomerReportXLSX, shareReportViaWhatsApp, exportAllReportsXLSX, CustomerReport } from '@/utils/reportGenerator';
+import { exportCustomerReportPDF, exportCustomerReportXLSX, shareReportViaWhatsApp, exportAllReportsXLSX, exportAllReportsPDF, CustomerReport } from '@/utils/reportGenerator';
 import { useResponsive } from '@/utils/responsive';
 import * as Sharing from 'expo-sharing';
 import { MonthlyReport } from '@/types/loan';
@@ -138,24 +138,51 @@ export default function ReportsScreen() {
     };
   }, [loans, payments]);
 
+  const [exportMenuVisible, setExportMenuVisible] = useState(false);
+
   const handleExportAllXLSX = async () => {
     try {
       setIsExporting(true);
+      setExportMenuVisible(false);
       const fileUri = await exportAllReportsXLSX(customerReports, overallStats, currency);
       
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
         await Sharing.shareAsync(fileUri, {
           mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          dialogTitle: 'Export Complete Report',
+          dialogTitle: 'Export Complete Report (XLSX)',
           UTI: 'org.openxmlformats.spreadsheetml.sheet',
         });
       }
       
-      Alert.alert('Success', 'Report exported successfully!');
+      Alert.alert('Success', 'XLSX report exported successfully!');
     } catch (error) {
       console.error('Error exporting XLSX:', error);
-      Alert.alert('Error', 'Failed to export report');
+      Alert.alert('Error', 'Failed to export XLSX report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportAllPDF = async () => {
+    try {
+      setIsExporting(true);
+      setExportMenuVisible(false);
+      const fileUri = await exportAllReportsPDF(customerReports, overallStats, currency);
+      
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/html',
+          dialogTitle: 'Export Complete Report (PDF)',
+          UTI: 'public.html',
+        });
+      }
+      
+      Alert.alert('Success', 'PDF report exported successfully!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      Alert.alert('Error', 'Failed to export PDF report');
     } finally {
       setIsExporting(false);
     }
@@ -326,7 +353,7 @@ End Date: ${formatDate(loan.endDate)}
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity onPress={handleExportAllXLSX} style={styles.headerButton} disabled={isExporting}>
+            <TouchableOpacity onPress={() => setExportMenuVisible(true)} style={styles.headerButton} disabled={isExporting}>
               {isExporting ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
@@ -625,6 +652,46 @@ End Date: ${formatDate(loan.endDate)}
             </ScrollView>
           </View>
         )}
+      </Modal>
+
+      <Modal
+        visible={exportMenuVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setExportMenuVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setExportMenuVisible(false)}
+        >
+          <View style={styles.exportMenu}>
+            <Text style={styles.exportMenuTitle}>Export Report As</Text>
+            <TouchableOpacity
+              style={styles.exportMenuItem}
+              onPress={handleExportAllPDF}
+              disabled={isExporting}
+            >
+              <FileText color={Colors.primary} size={24} />
+              <Text style={styles.exportMenuItemText}>PDF (HTML)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.exportMenuItem}
+              onPress={handleExportAllXLSX}
+              disabled={isExporting}
+            >
+              <FileSpreadsheet color={Colors.success} size={24} />
+              <Text style={styles.exportMenuItemText}>Excel (XLSX)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.exportMenuItem, styles.exportMenuItemCancel]}
+              onPress={() => setExportMenuVisible(false)}
+            >
+              <X color={Colors.textSecondary} size={24} />
+              <Text style={[styles.exportMenuItemText, { color: Colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -944,5 +1011,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600' as const,
     color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  exportMenu: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  exportMenuTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  exportMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+    marginBottom: 12,
+    gap: 16,
+  },
+  exportMenuItemCancel: {
+    backgroundColor: Colors.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  exportMenuItemText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.text,
   },
 });
