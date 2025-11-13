@@ -223,7 +223,7 @@ export async function exportCustomerReportXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -332,7 +332,7 @@ export async function exportAllReportsXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -536,7 +536,7 @@ export async function exportLoansXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -656,7 +656,7 @@ export async function exportPaymentsXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
@@ -794,7 +794,7 @@ export async function exportCustomersXLSX(
   
   const fileUri = FileSystem.documentDirectory + fileName;
   await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
   
   return fileUri;
