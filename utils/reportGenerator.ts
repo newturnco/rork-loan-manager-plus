@@ -2,9 +2,9 @@ import { Loan, Installment, Payment } from '@/types/loan';
 import { Customer } from '@/types/customer';
 import { formatCurrency, formatDate } from './calculations';
 import * as XLSX from 'xlsx';
-import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
+import { Directory } from 'expo-file-system/next';
 
 export interface CustomerReport {
   customer: Customer;
@@ -152,10 +152,22 @@ export async function exportCustomerReportPDF(
   const htmlContent = await generateCustomerPDF(report, currency);
   const fileName = `customer_report_${report.customer.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
   
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, htmlContent);
-  
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(htmlContent);
+    return file.uri;
+  }
 }
 
 export async function exportCustomerReportXLSX(
@@ -218,15 +230,26 @@ export async function exportCustomerReportXLSX(
   const paymentsSheet = XLSX.utils.aoa_to_sheet(paymentData);
   XLSX.utils.book_append_sheet(workbook, paymentsSheet, 'Payments');
 
-  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
   const fileName = `customer_report_${report.customer.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
   
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: 'base64' as any,
-  });
-  
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const wbout = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(wbout, { encoding: 'base64' });
+    return file.uri;
+  }
 }
 
 export async function shareReportViaWhatsApp(
@@ -327,15 +350,26 @@ export async function exportAllReportsXLSX(
     }
   });
 
-  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
   const fileName = `complete_report_${new Date().toISOString().split('T')[0]}.xlsx`;
   
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: 'base64' as any,
-  });
-  
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const wbout = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(wbout, { encoding: 'base64' });
+    return file.uri;
+  }
 }
 
 export async function exportAllReportsPDF(
@@ -495,10 +529,23 @@ export async function exportAllReportsPDF(
   `;
 
   const fileName = `complete_report_${new Date().toISOString().split('T')[0]}.html`;
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, htmlContent);
   
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(htmlContent);
+    return file.uri;
+  }
 }
 
 export async function exportLoansXLSX(
@@ -531,15 +578,26 @@ export async function exportLoansXLSX(
   const loansSheet = XLSX.utils.aoa_to_sheet(loansData);
   XLSX.utils.book_append_sheet(workbook, loansSheet, 'Loans');
 
-  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
   const fileName = `loans_report_${new Date().toISOString().split('T')[0]}.xlsx`;
   
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: 'base64' as any,
-  });
-  
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const wbout = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(wbout, { encoding: 'base64' });
+    return file.uri;
+  }
 }
 
 export async function exportLoansPDF(
@@ -605,10 +663,23 @@ export async function exportLoansPDF(
   `;
 
   const fileName = `loans_report_${new Date().toISOString().split('T')[0]}.html`;
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, htmlContent);
   
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(htmlContent);
+    return file.uri;
+  }
 }
 
 export async function exportPaymentsXLSX(
@@ -651,15 +722,26 @@ export async function exportPaymentsXLSX(
   const paymentsSheet = XLSX.utils.aoa_to_sheet(paymentsData);
   XLSX.utils.book_append_sheet(workbook, paymentsSheet, 'Payments');
 
-  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
   const fileName = `payments_report_${new Date().toISOString().split('T')[0]}.xlsx`;
   
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: 'base64' as any,
-  });
-  
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const wbout = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(wbout, { encoding: 'base64' });
+    return file.uri;
+  }
 }
 
 export async function exportPaymentsPDF(
@@ -753,10 +835,23 @@ export async function exportPaymentsPDF(
   `;
 
   const fileName = `payments_report_${new Date().toISOString().split('T')[0]}.html`;
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, htmlContent);
   
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(htmlContent);
+    return file.uri;
+  }
 }
 
 export async function exportCustomersXLSX(
@@ -789,15 +884,26 @@ export async function exportCustomersXLSX(
   const customersSheet = XLSX.utils.aoa_to_sheet(customersData);
   XLSX.utils.book_append_sheet(workbook, customersSheet, 'Customers');
 
-  const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
   const fileName = `customers_report_${new Date().toISOString().split('T')[0]}.xlsx`;
   
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: 'base64' as any,
-  });
-  
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const wbout = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const wbout = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(wbout, { encoding: 'base64' });
+    return file.uri;
+  }
 }
 
 export async function exportCustomersPDF(
@@ -865,8 +971,21 @@ export async function exportCustomersPDF(
   `;
 
   const fileName = `customers_report_${new Date().toISOString().split('T')[0]}.html`;
-  const fileUri = FileSystem.documentDirectory + fileName;
-  await FileSystem.writeAsStringAsync(fileUri, htmlContent);
   
-  return fileUri;
+  if (Platform.OS === 'web') {
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return url;
+  } else {
+    const file = new Directory('cache').getFile(fileName);
+    await file.write(htmlContent);
+    return file.uri;
+  }
 }
