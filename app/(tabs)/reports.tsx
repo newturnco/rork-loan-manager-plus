@@ -8,14 +8,18 @@ import {
   Share,
   Platform,
   Modal,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { FileText, Download, TrendingUp, Calendar, User, X } from 'lucide-react-native';
+import { FileText, Download, TrendingUp, Calendar, User, X, FileSpreadsheet, Send } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
+import { exportCustomerReportPDF, exportCustomerReportXLSX, shareReportViaWhatsApp, exportAllReportsXLSX, CustomerReport } from '@/utils/reportGenerator';
+import * as Sharing from 'expo-sharing';
 import { MonthlyReport } from '@/types/loan';
 
 export default function ReportsScreen() {
@@ -24,6 +28,7 @@ export default function ReportsScreen() {
   const { currency } = useCurrency();
   const [showCustomerReport, setShowCustomerReport] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const monthlyReports = useMemo<MonthlyReport[]>(() => {
     const reports: { [key: string]: MonthlyReport } = {};
@@ -72,7 +77,7 @@ export default function ReportsScreen() {
     );
   }, [loans, payments]);
 
-  const customerReports = useMemo(() => {
+  const customerReports = useMemo<CustomerReport[]>(() => {
     return customers.map((customer) => {
       const customerLoans = loans.filter((l) => l.customerId === customer.id);
       const customerInstallments = installments.filter((i) =>
@@ -130,6 +135,90 @@ export default function ReportsScreen() {
       totalPayments: payments.length,
     };
   }, [loans, payments]);
+
+  const handleExportAllXLSX = async () => {
+    try {
+      setIsExporting(true);
+      const fileUri = await exportAllReportsXLSX(customerReports, overallStats, currency);
+      
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          dialogTitle: 'Export Complete Report',
+          UTI: 'org.openxmlformats.spreadsheetml.sheet',
+        });
+      }
+      
+      Alert.alert('Success', 'Report exported successfully!');
+    } catch (error) {
+      console.error('Error exporting XLSX:', error);
+      Alert.alert('Error', 'Failed to export report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCustomerPDF = async (report: CustomerReport) => {
+    try {
+      setIsExporting(true);
+      const fileUri = await exportCustomerReportPDF(report, currency);
+      
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/html',
+          dialogTitle: 'Export Customer Report (HTML)',
+          UTI: 'public.html',
+        });
+      }
+      
+      Alert.alert('Success', 'Customer report exported successfully!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      Alert.alert('Error', 'Failed to export report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCustomerXLSX = async (report: CustomerReport) => {
+    try {
+      setIsExporting(true);
+      const fileUri = await exportCustomerReportXLSX(report, currency);
+      
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          dialogTitle: 'Export Customer Report',
+          UTI: 'org.openxmlformats.spreadsheetml.sheet',
+        });
+      }
+      
+      Alert.alert('Success', 'Customer report exported successfully!');
+    } catch (error) {
+      console.error('Error exporting XLSX:', error);
+      Alert.alert('Error', 'Failed to export report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleSendViaWhatsApp = async (report: CustomerReport) => {
+    try {
+      setIsExporting(true);
+      const fileUri = await exportCustomerReportXLSX(report, currency);
+      await shareReportViaWhatsApp(fileUri, report.customer.phone, 
+        `Hello ${report.customer.name}, please find your financial report attached.`);
+      Alert.alert('Success', 'Opening WhatsApp...');
+    } catch (error) {
+      console.error('Error sharing via WhatsApp:', error);
+      Alert.alert('Error', 'Failed to share via WhatsApp');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const exportReport = async () => {
     const reportText = `
@@ -235,8 +324,12 @@ End Date: ${formatDate(loan.endDate)}
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity onPress={exportReport} style={styles.headerButton}>
-              <Download color="#FFFFFF" size={24} />
+            <TouchableOpacity onPress={handleExportAllXLSX} style={styles.headerButton} disabled={isExporting}>
+              {isExporting ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Download color="#FFFFFF" size={24} />
+              )}
             </TouchableOpacity>
           ),
         }}
@@ -428,6 +521,35 @@ End Date: ${formatDate(loan.endDate)}
             </View>
 
             <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
+              <View style={styles.actionButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => handleExportCustomerPDF(selectedCustomerReport)}
+                  disabled={isExporting}
+                >
+                  <FileText color="#FFFFFF" size={20} />
+                  <Text style={styles.actionButtonText}>Export PDF</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: Colors.success }]}
+                  onPress={() => handleExportCustomerXLSX(selectedCustomerReport)}
+                  disabled={isExporting}
+                >
+                  <FileSpreadsheet color="#FFFFFF" size={20} />
+                  <Text style={styles.actionButtonText}>Export XLSX</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: '#25D366' }]}
+                  onPress={() => handleSendViaWhatsApp(selectedCustomerReport)}
+                  disabled={isExporting}
+                >
+                  <Send color="#FFFFFF" size={20} />
+                  <Text style={styles.actionButtonText}>WhatsApp</Text>
+                </TouchableOpacity>
+              </View>
+
               <View style={styles.modalSection}>
                 <Text style={styles.modalSectionTitle}>Summary</Text>
                 <View style={styles.modalStatsGrid}>
@@ -794,5 +916,28 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontStyle: 'italic' as const,
     marginTop: 4,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
   },
 });

@@ -12,10 +12,11 @@ import {
   Modal,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload } from 'lucide-react-native';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload, Clock, Calendar as CalendarIcon } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { useBackupSettings, BackupFrequency } from '@/contexts/BackupSettingsContext';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useQueryClient } from '@tanstack/react-query';
 import Colors from '@/constants/colors';
@@ -30,8 +31,10 @@ export default function SettingsScreen() {
   const { settings, updateSettings } = useAlertSettings();
   const { currency, updateCurrency } = useCurrency();
   const queryClient = useQueryClient();
+  const { settings: backupSettings, updateSettings: updateBackupSettings, performAutoBackup } = useBackupSettings();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [showBackupFrequencyModal, setShowBackupFrequencyModal] = useState(false);
 
   const handleBackup = async () => {
     try {
@@ -362,6 +365,68 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Automatic Backups</Text>
+          
+          <View style={styles.settingsCard}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <Clock color={Colors.info} size={20} />
+                <View style={styles.settingText}>
+                  <Text style={styles.settingLabel}>Enable Auto Backup</Text>
+                  <Text style={styles.settingDescription}>Periodic automatic backups</Text>
+                </View>
+              </View>
+              <Switch
+                value={backupSettings.enabled}
+                onValueChange={(value) => updateBackupSettings({ enabled: value })}
+                trackColor={{ false: Colors.border, true: Colors.primary + '50' }}
+                thumbColor={backupSettings.enabled ? Colors.primary : Colors.textSecondary}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => setShowBackupFrequencyModal(true)}
+            >
+              <View style={styles.settingLeft}>
+                <CalendarIcon color={Colors.secondary} size={20} />
+                <View style={styles.settingText}>
+                  <Text style={styles.settingLabel}>Backup Frequency</Text>
+                  <Text style={styles.settingDescription}>{backupSettings.frequency}</Text>
+                </View>
+              </View>
+              <ChevronRight color={Colors.textSecondary} size={20} />
+            </TouchableOpacity>
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <View style={styles.settingText}>
+                  <Text style={styles.settingLabel}>Last Backup</Text>
+                  <Text style={styles.settingDescription}>
+                    {backupSettings.lastBackupDate
+                      ? new Date(backupSettings.lastBackupDate).toLocaleDateString()
+                      : 'Never'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={async () => {
+                  const result = await performAutoBackup();
+                  if (result.success) {
+                    Alert.alert('Success', result.message);
+                  } else {
+                    Alert.alert('Info', result.message);
+                  }
+                }}
+                style={styles.manualBackupButton}
+              >
+                <Text style={styles.manualBackupButtonText}>Backup Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Management</Text>
           <SettingCard
             icon={<Download color={Colors.info} size={24} />}
@@ -435,6 +500,43 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showBackupFrequencyModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowBackupFrequencyModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Backup Frequency</Text>
+              <TouchableOpacity onPress={() => setShowBackupFrequencyModal(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View>
+              {(['daily', 'weekly', 'monthly', 'off'] as const).map((freq) => (
+                <TouchableOpacity
+                  key={freq}
+                  style={[
+                    styles.currencyItem,
+                    backupSettings.frequency === freq && styles.currencyItemSelected,
+                  ]}
+                  onPress={() => {
+                    updateBackupSettings({ frequency: freq });
+                    setShowBackupFrequencyModal(false);
+                  }}
+                >
+                  <Text style={styles.currencyItemName}>
+                    {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
       </Modal>
@@ -677,5 +779,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700' as const,
     color: Colors.primary,
+  },
+  manualBackupButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  manualBackupButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
   },
 });

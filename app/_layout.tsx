@@ -7,6 +7,7 @@ import { LoanProvider } from "@/contexts/LoanContext";
 import { CustomerProvider } from "@/contexts/CustomerContext";
 import { AlertSettingsProvider } from "@/contexts/AlertSettingsContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { BackupSettingsProvider } from "@/contexts/BackupSettingsContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 
@@ -74,13 +75,15 @@ export default function RootLayout() {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <CurrencyProvider>
           <AlertSettingsProvider>
-            <CustomerProvider>
-              <LoanProvider>
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                  <RootLayoutNav />
-                </GestureHandlerRootView>
-              </LoanProvider>
-            </CustomerProvider>
+            <BackupSettingsProvider>
+              <CustomerProvider>
+                <LoanProvider>
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    <RootLayoutNav />
+                  </GestureHandlerRootView>
+                </LoanProvider>
+              </CustomerProvider>
+            </BackupSettingsProvider>
           </AlertSettingsProvider>
         </CurrencyProvider>
       </trpc.Provider>
