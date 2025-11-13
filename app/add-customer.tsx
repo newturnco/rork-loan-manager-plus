@@ -107,7 +107,7 @@ export default function AddCustomerScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email {'(Optional)'}</Text>
+            <Text style={styles.label}>Email (Optional)</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter email address"
@@ -120,7 +120,7 @@ export default function AddCustomerScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Address {'(Optional)'}</Text>
+            <Text style={styles.label}>Address (Optional)</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Enter address"
@@ -134,7 +134,7 @@ export default function AddCustomerScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Notes {'(Optional)'}</Text>
+            <Text style={styles.label}>Notes (Optional)</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Enter any additional notes"
