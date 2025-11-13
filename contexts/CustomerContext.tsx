@@ -34,25 +34,27 @@ export const [CustomerProvider, useCustomers] = createContextHook(() => {
     },
   });
 
+  const { mutate: saveCustomers } = saveCustomersMutation;
+
   const addCustomer = useCallback((customer: Customer) => {
     const newCustomers = [...customers, customer];
     setCustomers(newCustomers);
-    saveCustomersMutation.mutate(newCustomers);
-  }, [customers]);
+    saveCustomers(newCustomers);
+  }, [customers, saveCustomers]);
 
   const updateCustomer = useCallback((customerId: string, updates: Partial<Customer>) => {
     const newCustomers = customers.map((c) => 
       c.id === customerId ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c
     );
     setCustomers(newCustomers);
-    saveCustomersMutation.mutate(newCustomers);
-  }, [customers]);
+    saveCustomers(newCustomers);
+  }, [customers, saveCustomers]);
 
   const deleteCustomer = useCallback((customerId: string) => {
     const newCustomers = customers.filter((c) => c.id !== customerId);
     setCustomers(newCustomers);
-    saveCustomersMutation.mutate(newCustomers);
-  }, [customers]);
+    saveCustomers(newCustomers);
+  }, [customers, saveCustomers]);
 
   const getCustomerById = useCallback((customerId: string) => {
     return customers.find((c) => c.id === customerId);

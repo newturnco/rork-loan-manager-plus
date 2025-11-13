@@ -34,24 +34,26 @@ export default function AddCustomerScreen() {
       return;
     }
 
-    const customer: Customer = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      address: address.trim(),
-      notes: notes.trim(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const customer: Customer = {
+        id: Date.now().toString(),
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        address: address.trim(),
+        notes: notes.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    addCustomer(customer);
-    Alert.alert('Success', 'Customer created successfully', [
-      {
-        text: 'OK',
-        onPress: () => router.back(),
-      },
-    ]);
+      addCustomer(customer);
+      setTimeout(() => {
+        router.back();
+      }, 100);
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      Alert.alert('Error', 'Failed to create customer');
+    }
   };
 
   return (

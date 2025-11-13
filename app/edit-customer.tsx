@@ -60,13 +60,7 @@ export default function EditCustomerScreen() {
 
     updateCustomer(customerId, updatedCustomer);
     updateLoansByCustomer(updatedCustomer);
-
-    Alert.alert('Success', 'Customer updated successfully', [
-      {
-        text: 'OK',
-        onPress: () => router.back(),
-      },
-    ]);
+    router.back();
   };
 
   const handleDelete = () => {
@@ -79,8 +73,15 @@ export default function EditCustomerScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            deleteCustomer(customerId);
-            router.back();
+            try {
+              deleteCustomer(customerId);
+              setTimeout(() => {
+                router.back();
+              }, 100);
+            } catch (error) {
+              console.error('Error deleting customer:', error);
+              Alert.alert('Error', 'Failed to delete customer');
+            }
           },
         },
       ]
@@ -111,7 +112,7 @@ export default function EditCustomerScreen() {
           headerRight: () => (
             <View style={styles.headerButtons}>
               <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-                <Trash2 color={Colors.error} size={24} />
+                <Trash2 color="#FF3B30" size={24} />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
                 <Save color="#FFFFFF" size={24} />
