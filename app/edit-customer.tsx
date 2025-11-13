@@ -196,7 +196,16 @@ export default function EditCustomerScreen() {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
-          headerRight: () => <View style={styles.headerButtons}><TouchableOpacity onPress={handleDelete} style={styles.deleteButton}><Trash2 color="#FF3B30" size={24} /></TouchableOpacity><TouchableOpacity onPress={handleSave} style={styles.saveButton}><Save color="#FFFFFF" size={24} /></TouchableOpacity></View>,
+          headerRight: () => (
+            <View style={styles.headerButtons}>
+              <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+                <Trash2 color="#FF3B30" size={24} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+                <Save color="#FFFFFF" size={24} />
+              </TouchableOpacity>
+            </View>
+          ),
         }}
       />
 
