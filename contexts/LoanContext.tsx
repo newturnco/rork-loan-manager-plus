@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loan, Installment, Payment, DashboardStats, LoanStatus } from '@/types/loan';
 import { generateInstallments, updateInstallmentStatus } from '@/utils/calculations';
+import { Customer } from '@/types/customer';
 
 const LOANS_KEY = '@loans';
 const INSTALLMENTS_KEY = '@installments';
@@ -103,6 +104,19 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
     const newLoans = loans.map((l) => (l.id === loanId ? { ...l, ...updates } : l));
     setLoans(newLoans);
     saveLoansMutation.mutate(newLoans);
+  }, [loans]);
+
+  const updateLoansByCustomer = useCallback((customer: Customer) => {
+    const customerLoans = loans.filter((l) => l.customerId === customer.id);
+    if (customerLoans.length > 0) {
+      const newLoans = loans.map((l) => 
+        l.customerId === customer.id 
+          ? { ...l, borrowerName: customer.name, borrowerPhone: customer.phone } 
+          : l
+      );
+      setLoans(newLoans);
+      saveLoansMutation.mutate(newLoans);
+    }
   }, [loans]);
 
   const deleteLoan = useCallback((loanId: string) => {
@@ -242,6 +256,7 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
     dashboardStats,
     addLoan,
     updateLoan,
+    updateLoansByCustomer,
     deleteLoan,
     recordPayment,
     getLoanById,

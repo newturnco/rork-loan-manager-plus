@@ -16,6 +16,8 @@ import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { useCustomers } from '@/contexts/CustomerContext';
+import { useQueryClient } from '@tanstack/react-query';
 import Colors from '@/constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from 'expo-file-system';
@@ -24,8 +26,10 @@ import * as DocumentPicker from 'expo-document-picker';
 
 export default function SettingsScreen() {
   const { loans, installments, payments } = useLoans();
+  const { customers } = useCustomers();
   const { settings, updateSettings } = useAlertSettings();
   const { currency, updateCurrency } = useCurrency();
+  const queryClient = useQueryClient();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
 
@@ -121,7 +125,14 @@ export default function SettingsScreen() {
                   await AsyncStorage.setItem('@alertSettings', JSON.stringify(backup.data.alertSettings));
                 }
 
-                Alert.alert('Success', 'Data restored successfully! Please restart the app.', [
+                queryClient.invalidateQueries({ queryKey: ['loans'] });
+                queryClient.invalidateQueries({ queryKey: ['installments'] });
+                queryClient.invalidateQueries({ queryKey: ['payments'] });
+                queryClient.invalidateQueries({ queryKey: ['customers'] });
+                queryClient.invalidateQueries({ queryKey: ['currency'] });
+                queryClient.invalidateQueries({ queryKey: ['alertSettings'] });
+
+                Alert.alert('Success', 'Data restored successfully!', [
                   { text: 'OK' },
                 ]);
               } catch (error) {
@@ -227,6 +238,10 @@ export default function SettingsScreen() {
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{payments.length}</Text>
               <Text style={styles.statLabel}>Payments</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{customers.length}</Text>
+              <Text style={styles.statLabel}>Customers</Text>
             </View>
           </View>
         </View>

@@ -11,12 +11,14 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Save, User, Trash2 } from 'lucide-react-native';
 import { useCustomers } from '@/contexts/CustomerContext';
+import { useLoans } from '@/contexts/LoanContext';
 import Colors from '@/constants/colors';
 
 export default function EditCustomerScreen() {
   const router = useRouter();
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const { getCustomerById, updateCustomer, deleteCustomer } = useCustomers();
+  const { updateLoansByCustomer } = useLoans();
 
   const customer = getCustomerById(customerId);
 
@@ -46,13 +48,18 @@ export default function EditCustomerScreen() {
       return;
     }
 
-    updateCustomer(customerId, {
+    const updatedCustomer = {
+      ...customer!,
       name: name.trim(),
       phone: phone.trim(),
       email: email.trim(),
       address: address.trim(),
       notes: notes.trim(),
-    });
+      updatedAt: new Date().toISOString(),
+    };
+
+    updateCustomer(customerId, updatedCustomer);
+    updateLoansByCustomer(updatedCustomer);
 
     Alert.alert('Success', 'Customer updated successfully', [
       {
@@ -206,11 +213,11 @@ const styles = StyleSheet.create({
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginRight: 16,
+    marginRight: 4,
   },
   deleteButton: {
     padding: 8,
+    marginRight: 8,
   },
   saveButton: {
     padding: 8,
