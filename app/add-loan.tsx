@@ -124,7 +124,7 @@ export default function AddLoanScreen() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedCustomer) {
       Alert.alert('Error', 'Please select a customer');
       return;
@@ -164,32 +164,46 @@ export default function AddLoanScreen() {
       return;
     }
 
-    const loan: Loan = {
-      id: Date.now().toString(),
-      customerId: selectedCustomer,
-      borrowerName: borrowerName.trim(),
-      borrowerPhone: borrowerPhone.trim(),
-      principalAmount: parseFloat(principalAmount),
-      interestRate: parseFloat(interestRate),
-      interestAmount: interestAmount ? parseFloat(interestAmount) : undefined,
-      interestType,
-      startDate: formatDateToISO(startDate),
-      endDate: formatDateToISO(endDateStr),
-      installmentFrequency,
-      numberOfInstallments: parseInt(numberOfInstallments),
-      status: 'active',
-      notes: notes.trim(),
-      createdAt: new Date().toISOString(),
-      currency: currency.code,
-    };
+    try {
+      const loan: Loan = {
+        id: Date.now().toString(),
+        customerId: selectedCustomer,
+        borrowerName: borrowerName.trim(),
+        borrowerPhone: borrowerPhone.trim(),
+        principalAmount: parseFloat(principalAmount),
+        interestRate: parseFloat(interestRate),
+        interestAmount: interestAmount ? parseFloat(interestAmount) : undefined,
+        interestType,
+        startDate: formatDateToISO(startDate),
+        endDate: formatDateToISO(endDateStr),
+        installmentFrequency,
+        numberOfInstallments: parseInt(numberOfInstallments),
+        status: 'active',
+        notes: notes.trim(),
+        createdAt: new Date().toISOString(),
+        currency: currency.code,
+      };
 
-    addLoan(loan);
-    Alert.alert('Success', 'Loan created successfully', [
-      {
-        text: 'OK',
-        onPress: () => router.back(),
-      },
-    ]);
+      console.log('[iOS/Web] Adding loan:', loan.id);
+      addLoan(loan);
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('[iOS/Web] Loan added, navigating back');
+      
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/loans');
+      }
+
+      requestAnimationFrame(() => {
+        Alert.alert('Success', 'Loan created successfully');
+      });
+    } catch (error) {
+      console.error('[iOS/Web] Error creating loan:', error);
+      Alert.alert('Error', 'Failed to create loan');
+    }
   };
 
   const InterestTypeButton = ({

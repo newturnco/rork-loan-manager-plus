@@ -72,7 +72,7 @@ export default function AddPaymentScreen() {
 
   const availableInstallments = installments.filter(inst => inst.status !== 'paid');
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedLoanId || !selectedInstallmentId) {
       Alert.alert('Error', 'Please select a loan and installment');
       return;
@@ -101,44 +101,60 @@ export default function AddPaymentScreen() {
       return;
     }
 
-    const payment: Payment = {
-      id: Date.now().toString(),
-      loanId: selectedLoanId,
-      installmentId: selectedInstallmentId,
-      amount: paymentTotalAmount,
-      principalAmount: paymentPrincipalAmount,
-      interestAmount: paymentInterestAmount,
-      paymentDate: new Date(paymentDate.split('-').reverse().join('-')).toISOString(),
-      method: paymentMethod,
-      notes: notes.trim(),
-    };
+    try {
+      const payment: Payment = {
+        id: Date.now().toString(),
+        loanId: selectedLoanId,
+        installmentId: selectedInstallmentId,
+        amount: paymentTotalAmount,
+        principalAmount: paymentPrincipalAmount,
+        interestAmount: paymentInterestAmount,
+        paymentDate: new Date(paymentDate.split('-').reverse().join('-')).toISOString(),
+        method: paymentMethod,
+        notes: notes.trim(),
+      };
 
-    recordPayment(selectedInstallmentId, payment);
+      console.log('[iOS/Web] Recording payment:', payment.id);
+      recordPayment(selectedInstallmentId, payment);
 
-    const isFullyPaid = paymentTotalAmount >= remainingTotal;
-    const message = isFullyPaid
-      ? `Hi ${loan.borrowerName}, we confirm receipt of your payment of ${formatCurrency(paymentTotalAmount, currency.code, currency.symbol)} for installment #${installment.installmentNumber}. This installment is now fully paid. Thank you!`
-      : `Hi ${loan.borrowerName}, we confirm receipt of your payment of ${formatCurrency(paymentTotalAmount, currency.code, currency.symbol)} for installment #${installment.installmentNumber}. Remaining balance: ${formatCurrency(remainingTotal - paymentTotalAmount, currency.code, currency.symbol)}. Thank you!`;
+      const isFullyPaid = paymentTotalAmount >= remainingTotal;
+      const message = isFullyPaid
+        ? `Hi ${loan.borrowerName}, we confirm receipt of your payment of ${formatCurrency(paymentTotalAmount, currency.code, currency.symbol)} for installment #${installment.installmentNumber}. This installment is now fully paid. Thank you!`
+        : `Hi ${loan.borrowerName}, we confirm receipt of your payment of ${formatCurrency(paymentTotalAmount, currency.code, currency.symbol)} for installment #${installment.installmentNumber}. Remaining balance: ${formatCurrency(remainingTotal - paymentTotalAmount, currency.code, currency.symbol)}. Thank you!`;
 
-    Alert.alert(
-      'Success',
-      'Payment recorded successfully',
-      [
-        {
-          text: 'Send WhatsApp Receipt',
-          onPress: () => {
-            const phoneNumber = loan.borrowerPhone.replace(/[^0-9]/g, '');
-            const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-            Linking.openURL(url);
-            router.back();
-          },
-        },
-        {
-          text: 'Done',
-          onPress: () => router.back(),
-        },
-      ]
-    );
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('[iOS/Web] Payment recorded, navigating back');
+      
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/loans');
+      }
+
+      requestAnimationFrame(() => {
+        Alert.alert(
+          'Success',
+          'Payment recorded successfully',
+          [
+            {
+              text: 'Send WhatsApp Receipt',
+              onPress: () => {
+                const phoneNumber = loan.borrowerPhone.replace(/[^0-9]/g, '');
+                const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                Linking.openURL(url);
+              },
+            },
+            {
+              text: 'Done',
+            },
+          ]
+        );
+      });
+    } catch (error) {
+      console.error('[iOS/Web] Error recording payment:', error);
+      Alert.alert('Error', 'Failed to record payment');
+    }
   };
 
   const PaymentMethodButton = ({ method }: { method: string }) => (

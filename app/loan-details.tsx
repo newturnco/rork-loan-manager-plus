@@ -63,13 +63,22 @@ export default function LoanDetailsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('[iOS] Deleting loan:', loanId);
+              console.log('[iOS/Web] Deleting loan:', loanId);
               await deleteLoan(loanId);
               await new Promise(resolve => setTimeout(resolve, 150));
-              console.log('[iOS] Loan deleted, navigating back');
-              router.back();
+              console.log('[iOS/Web] Loan deleted, navigating back');
+              
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/loans');
+              }
+
+              requestAnimationFrame(() => {
+                Alert.alert('Success', 'Loan deleted successfully');
+              });
             } catch (error) {
-              console.error('[iOS] Error deleting loan:', error);
+              console.error('[iOS/Web] Error deleting loan:', error);
               Alert.alert('Error', 'Failed to delete loan');
             }
           },

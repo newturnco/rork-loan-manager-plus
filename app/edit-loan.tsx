@@ -50,7 +50,7 @@ export default function EditLoanScreen() {
     );
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!principalAmount || parseFloat(principalAmount) <= 0) {
       Alert.alert('Error', 'Please enter a valid principal amount');
       return;
@@ -60,19 +60,32 @@ export default function EditLoanScreen() {
       return;
     }
 
-    updateLoan(loanId, {
-      principalAmount: parseFloat(principalAmount),
-      interestRate: parseFloat(interestRate),
-      interestType,
-      notes: notes.trim(),
-    });
+    try {
+      console.log('[iOS/Web] Updating loan:', loanId);
+      updateLoan(loanId, {
+        principalAmount: parseFloat(principalAmount),
+        interestRate: parseFloat(interestRate),
+        interestType,
+        notes: notes.trim(),
+      });
 
-    Alert.alert('Success', 'Loan updated successfully', [
-      {
-        text: 'OK',
-        onPress: () => router.back(),
-      },
-    ]);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('[iOS/Web] Loan updated, navigating back');
+      
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/loans');
+      }
+
+      requestAnimationFrame(() => {
+        Alert.alert('Success', 'Loan updated successfully');
+      });
+    } catch (error) {
+      console.error('[iOS/Web] Error updating loan:', error);
+      Alert.alert('Error', 'Failed to update loan');
+    }
   };
 
   const InterestTypeButton = ({
