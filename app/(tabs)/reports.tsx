@@ -546,7 +546,7 @@ End Date: ${formatDate(loan.endDate)}
                 {report.overduePayments > 0 && (
                   <View style={styles.overdueWarning}>
                     <Text style={styles.overdueText}>
-                      {report.overduePayments} overdue payment{report.overduePayments > 1 ? 's' : ''}
+                      {`${report.overduePayments} overdue payment${report.overduePayments > 1 ? 's' : ''}`}
                     </Text>
                   </View>
                 )}

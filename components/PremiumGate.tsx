@@ -126,7 +126,7 @@ export function FeatureLimit({ current, max, item }: FeatureLimitProps) {
       </View>
       {isNearLimit && (
         <Text style={styles.limitWarning}>
-          You're running low on {item}. Upgrade to premium for unlimited access.
+          {`You're running low on ${item}. Upgrade to premium for unlimited access.`}
         </Text>
       )}
     </View>
