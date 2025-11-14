@@ -40,6 +40,7 @@ export const [CustomerProvider, useCustomers] = createContextHook(() => {
     const newCustomers = [...customers, customer];
     setCustomers(newCustomers);
     saveCustomers(newCustomers);
+    console.log('Customer added:', customer.id, customer.name);
   }, [customers, saveCustomers]);
 
   const updateCustomer = useCallback((customerId: string, updates: Partial<Customer>) => {
@@ -48,15 +49,21 @@ export const [CustomerProvider, useCustomers] = createContextHook(() => {
     );
     setCustomers(newCustomers);
     saveCustomers(newCustomers);
+    console.log('Customer updated:', customerId);
   }, [customers, saveCustomers]);
 
   const deleteCustomer = useCallback(async (customerId: string) => {
+    console.log('[CustomerContext] Attempting to delete customer:', customerId);
     const newCustomers = customers.filter((c) => c.id !== customerId);
+    console.log('[CustomerContext] Customers before delete:', customers.length);
+    console.log('[CustomerContext] Customers after delete:', newCustomers.length);
     setCustomers(newCustomers);
     try {
       await AsyncStorage.setItem(CUSTOMERS_KEY, JSON.stringify(newCustomers));
+      console.log('[CustomerContext] Customer deleted and saved to storage');
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     } catch (error) {
+      console.error('[CustomerContext] Error saving after delete:', error);
       throw error;
     }
   }, [customers, queryClient]);
