@@ -63,13 +63,10 @@ export default function LoanDetailsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('[iOS] Deleting loan:', loanId);
               await deleteLoan(loanId);
               await new Promise(resolve => setTimeout(resolve, 150));
-              console.log('[iOS] Loan deleted, navigating back');
               router.back();
             } catch (error) {
-              console.error('[iOS] Error deleting loan:', error);
               Alert.alert('Error', 'Failed to delete loan');
             }
           },
@@ -373,11 +370,8 @@ export default function LoanDetailsScreen() {
                               style: 'destructive',
                               onPress: async () => {
                                 try {
-                                  console.log('[iOS] Deleting payment:', payment.id);
                                   await deletePayment(payment.id);
-                                  console.log('[iOS] Payment deleted');
                                 } catch (error) {
-                                  console.error('[iOS] Error deleting payment:', error);
                                   Alert.alert('Error', 'Failed to delete payment');
                                 }
                               },

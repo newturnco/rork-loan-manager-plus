@@ -47,11 +47,8 @@ export default function PaymentsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('[iOS] Deleting payment from payments tab:', payment.id);
               await deletePayment(payment.id);
-              console.log('[iOS] Payment deleted from payments tab');
             } catch (error) {
-              console.error('[iOS] Error deleting payment from payments tab:', error);
               Alert.alert('Error', 'Failed to delete payment');
             }
           },

@@ -119,7 +119,6 @@ export default function AddLoanScreen() {
       const year = end.getFullYear();
       return `${day}-${month}-${year}`;
     } catch (error) {
-      console.error('Error calculating end date:', error);
       return 'Invalid Date';
     }
   };

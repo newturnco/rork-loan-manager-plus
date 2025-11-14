@@ -120,7 +120,6 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
   }, [loans]);
 
   const deleteLoan = useCallback(async (loanId: string) => {
-    console.log('[LoanContext] Deleting loan:', loanId);
     const newLoans = loans.filter((l) => l.id !== loanId);
     setLoans(newLoans);
 
@@ -134,12 +133,10 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
       await AsyncStorage.setItem(LOANS_KEY, JSON.stringify(newLoans));
       await AsyncStorage.setItem(INSTALLMENTS_KEY, JSON.stringify(newInstallments));
       await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(newPayments));
-      console.log('[LoanContext] Loan and related data deleted from storage');
       queryClient.invalidateQueries({ queryKey: ['loans'] });
       queryClient.invalidateQueries({ queryKey: ['installments'] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
     } catch (error) {
-      console.error('[LoanContext] Error deleting loan:', error);
       throw error;
     }
   }, [loans, installments, payments, queryClient]);
@@ -239,10 +236,8 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
   }, [payments]);
 
   const deletePayment = useCallback(async (paymentId: string) => {
-    console.log('[LoanContext] Deleting payment:', paymentId);
     const payment = payments.find((p) => p.id === paymentId);
     if (!payment) {
-      console.log('[LoanContext] Payment not found:', paymentId);
       return;
     }
 
@@ -265,11 +260,9 @@ export const [LoanProvider, useLoans] = createContextHook(() => {
     try {
       await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(newPayments));
       await AsyncStorage.setItem(INSTALLMENTS_KEY, JSON.stringify(newInstallments));
-      console.log('[LoanContext] Payment deleted from storage');
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['installments'] });
     } catch (error) {
-      console.error('[LoanContext] Error deleting payment:', error);
       throw error;
     }
   }, [payments, installments, queryClient]);
