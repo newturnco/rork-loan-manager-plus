@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Platform,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,30 +20,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function ModuleSelectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selectedModule, setSelectedModule] = useState<string | null>(null);
 
   const handleModuleSelect = async (module: 'loan' | 'rent') => {
-    setSelectedModule(module);
     await AsyncStorage.setItem('selectedModule', module);
-    
+
     if (module === 'loan') {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/loan-dashboard');
     } else {
-      router.replace('/(rent-tabs)');
+      router.replace('/(rent-tabs)/rent-dashboard');
     }
   };
 
   const ModuleCard = ({
     title,
     description,
-    icon,
+    Icon,
     features,
     gradient,
     onPress,
   }: {
     title: string;
     description: string;
-    icon: React.ReactNode;
+    Icon: React.ComponentType<{ color: string; size: number }>;
     features: string[];
     gradient: string[];
     onPress: () => void;
@@ -61,7 +58,9 @@ export default function ModuleSelectionScreen() {
         style={styles.cardGradient}
       >
         <View style={styles.cardHeader}>
-          <View style={styles.iconContainer}>{icon}</View>
+          <View style={styles.iconContainer}>
+            <Icon color="#FFFFFF" size={32} />
+          </View>
           <View style={styles.cardTitleContainer}>
             <Text style={styles.cardTitle}>{title}</Text>
             <Text style={styles.cardDescription}>{description}</Text>
@@ -104,7 +103,7 @@ export default function ModuleSelectionScreen() {
           <ModuleCard
             title="Loan Management"
             description="Track loans, payments & interest"
-            icon={<Wallet color="#FFFFFF" size={32} />}
+            Icon={Wallet}
             features={[
               'Track loans & borrowers',
               'Automated payment schedules',
@@ -119,7 +118,7 @@ export default function ModuleSelectionScreen() {
           <ModuleCard
             title="Rent Management"
             description="Manage properties & tenants"
-            icon={<Home color="#FFFFFF" size={32} />}
+            Icon={Home}
             features={[
               'Property portfolio tracking',
               'Tenant management',

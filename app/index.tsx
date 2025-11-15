@@ -21,11 +21,11 @@ export default function RootEntryScreen() {
         }
         setStatus('redirecting');
         if (stored === 'rent') {
-          router.replace('/(rent-tabs)');
+          router.replace('/(rent-tabs)/rent-dashboard');
           return;
         }
         if (stored === 'loan') {
-          router.replace('/(tabs)');
+          router.replace('/(tabs)/loan-dashboard');
           return;
         }
         router.replace('/module-selection');
