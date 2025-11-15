@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Edit,
 } from 'lucide-react-native';
+import NotificationBell from '@/components/NotificationBell';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate, getDaysUntil, isOverdue } from '@/utils/calculations';
@@ -39,7 +40,12 @@ export default function LoanDetailsScreen() {
   if (!loan) {
     return (
       <View style={styles.container}>
-        <Stack.Screen options={{ title: 'Loan Not Found' }} />
+        <Stack.Screen options={{ 
+          title: 'Loan Not Found',
+          headerStyle: { backgroundColor: Colors.primary },
+          headerTintColor: '#FFFFFF',
+          headerRight: () => <NotificationBell />,
+        }} />
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>Loan not found</Text>
         </View>
@@ -241,6 +247,7 @@ export default function LoanDetailsScreen() {
           headerTintColor: '#FFFFFF',
           headerRight: () => (
             <View style={styles.headerRightContainer}>
+              <NotificationBell />
               <TouchableOpacity
                 onPress={() =>
                   router.push({ pathname: '/edit-loan', params: { loanId } })

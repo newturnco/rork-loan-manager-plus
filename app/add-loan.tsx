@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Save, Calendar, DollarSign, User, Plus, ChevronDown } from 'lucide-react-native';
+import NotificationBell from '@/components/NotificationBell';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -267,9 +268,12 @@ export default function AddLoanScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-              <Save color="#FFFFFF" size={24} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <NotificationBell />
+              <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+                <Save color="#FFFFFF" size={24} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />

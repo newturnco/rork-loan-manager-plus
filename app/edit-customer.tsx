@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Save, User, Trash2 } from 'lucide-react-native';
+import NotificationBell from '@/components/NotificationBell';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useLoans } from '@/contexts/LoanContext';
 import Colors from '@/constants/colors';
@@ -143,6 +144,7 @@ export default function EditCustomerScreen() {
           headerTintColor: '#FFFFFF',
           headerRight: () => (
             <View style={styles.headerButtons}>
+              <NotificationBell />
               <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
                 <Trash2 color="#FF3B30" size={24} />
               </TouchableOpacity>

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Plus, Edit2, Trash2, Check } from 'lucide-react-native';
+import NotificationBell from '@/components/NotificationBell';
 import { useMessageTemplates, MessageTemplate } from '@/contexts/MessageTemplateContext';
 import Colors from '@/constants/colors';
 import { useResponsive } from '@/utils/responsive';
@@ -186,6 +187,7 @@ export default function MessageTemplatesScreen() {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
+          headerRight: () => <NotificationBell />,
         }}
       />
 

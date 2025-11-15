@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Save, DollarSign, CreditCard, ChevronDown, X } from 'lucide-react-native';
+import NotificationBell from '@/components/NotificationBell';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
@@ -187,9 +188,12 @@ export default function AddPaymentScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-              <Save color="#FFFFFF" size={24} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <NotificationBell />
+              <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+                <Save color="#FFFFFF" size={24} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />

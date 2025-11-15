@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Save, User } from 'lucide-react-native';
+import NotificationBell from '@/components/NotificationBell';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import Colors from '@/constants/colors';
@@ -92,7 +93,12 @@ export default function AddCustomerScreen() {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
-          headerRight: () => <TouchableOpacity onPress={handleSave} style={styles.saveButton}><Save color="#FFFFFF" size={24} /></TouchableOpacity>,
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <NotificationBell />
+              <TouchableOpacity onPress={handleSave} style={styles.saveButton}><Save color="#FFFFFF" size={24} /></TouchableOpacity>
+            </View>
+          ),
         }}
       />
 
