@@ -1,9 +1,38 @@
-import { Tabs } from "expo-router";
-import { LayoutDashboard, Wallet, FileText, Settings, Users, Calculator, Receipt } from "lucide-react-native";
 import React from "react";
-import { StyleSheet } from "react-native";
-import Colors from "@/constants/colors";
-import NotificationBell from "@/components/NotificationBell";
+import { Tabs, useRouter } from "expo-router";
+import {
+  LayoutDashboard,
+  Wallet,
+  FileText,
+  Settings,
+  Users,
+  Calculator,
+  Receipt,
+  Plus,
+} from "lucide-react-native";
+import { StyleSheet, View, TouchableOpacity } from "react-native";
+import Colors from "../../constants/colors";
+import NotificationBell from "../../components/NotificationBell";
+
+function LoanDashboardHeaderRight() {
+  const router = useRouter();
+
+  return (
+    <View style={styles.headerActions}>
+      <TouchableOpacity
+        onPress={() => {
+          console.log('Quick add loan from dashboard header');
+          router.push('/add-loan');
+        }}
+        style={styles.addButton}
+        testID="tabs-add-loan-button"
+      >
+        <Plus color="#FFFFFF" size={22} />
+      </TouchableOpacity>
+      <NotificationBell />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -16,26 +45,24 @@ export default function TabLayout() {
           backgroundColor: Colors.primary,
         },
         headerTintColor: '#FFFFFF',
-        headerRight: () => <NotificationBell />,
         tabBarStyle: {
           backgroundColor: Colors.cardBackground,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: 8,
-          height: 65,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600' as const,
         },
+        headerRight: () => <NotificationBell />,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="loan-dashboard"
         options={{
           title: "Dashboard",
           tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
+          headerRight: () => <LoanDashboardHeaderRight />,
         }}
       />
       <Tabs.Screen
@@ -84,4 +111,14 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  addButton: {
+    padding: 8,
+    marginRight: 4,
+  },
+});

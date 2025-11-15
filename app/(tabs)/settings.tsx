@@ -12,17 +12,17 @@ import {
   Modal,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload, Clock, Calendar as CalendarIcon, Crown, FolderOpen, FileText } from 'lucide-react-native';
-import { useLoans } from '@/contexts/LoanContext';
-import { useAlertSettings } from '@/contexts/AlertSettingsContext';
-import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
-import { useBackupSettings, BackupFrequency, BackupLocation } from '@/contexts/BackupSettingsContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useCustomers } from '@/contexts/CustomerContext';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload, Clock, Calendar as CalendarIcon, Crown, FolderOpen, FileText, RefreshCw } from 'lucide-react-native';
+import { useLoans } from '../../contexts/LoanContext';
+import { useAlertSettings } from '../../contexts/AlertSettingsContext';
+import { useCurrency, CURRENCIES, Currency } from '../../contexts/CurrencyContext';
+import { useBackupSettings } from '../../contexts/BackupSettingsContext';
+import { useSubscription } from '../../contexts/SubscriptionContext';
+import { useCustomers } from '../../contexts/CustomerContext';
 import { useQueryClient } from '@tanstack/react-query';
-import Colors from '@/constants/colors';
+import Colors from '../../constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useResponsive } from '@/utils/responsive';
+import { useResponsive } from '../../utils/responsive';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -197,6 +197,29 @@ export default function SettingsScreen() {
     Alert.alert('Success', `Currency changed to ${newCurrency.name}`);
   };
 
+  const handleSwitchModule = () => {
+    Alert.alert(
+      'Switch Module',
+      'Select which experience you want to manage next.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          onPress: async () => {
+            try {
+              console.log('[Settings] Switching management module');
+              await AsyncStorage.removeItem('selectedModule');
+              router.replace('/module-selection');
+            } catch (error) {
+              console.error('[Settings] Failed to switch module', error);
+              Alert.alert('Error', 'Unable to switch module right now. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const SettingCard = ({
     icon,
     title,
@@ -215,7 +238,7 @@ export default function SettingsScreen() {
       onPress={onPress}
     >
       <View style={[styles.iconContainer, danger && styles.dangerIcon]}>
-        {icon}
+        {React.isValidElement(icon) ? icon : null}
       </View>
       <View style={styles.settingContent}>
         <Text style={[styles.settingTitle, danger && styles.dangerText]}>
@@ -521,6 +544,16 @@ export default function SettingsScreen() {
             onPress={() => {
               router.push('/message-templates' as any);
             }}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Module Selection</Text>
+          <SettingCard
+            icon={<RefreshCw color={Colors.secondary} size={24} />}
+            title="Switch Module"
+            subtitle="Jump between Loan and Rent dashboards"
+            onPress={handleSwitchModule}
           />
         </View>
 
