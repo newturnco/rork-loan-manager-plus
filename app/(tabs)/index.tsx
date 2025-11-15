@@ -24,7 +24,7 @@ import { formatCurrency, formatDate, getDaysUntil } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { useResponsive } from '@/utils/responsive';
 
-export default function DashboardScreen() {
+export default function LoanDashboardScreen() {
   const router = useRouter();
   const { dashboardStats, loans, isLoading } = useLoans();
   const { currency } = useCurrency();

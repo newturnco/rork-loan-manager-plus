@@ -11,6 +11,7 @@ import { BackupSettingsProvider } from "@/contexts/BackupSettingsContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { MessageTemplateProvider } from "@/contexts/MessageTemplateContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { RentProvider } from "@/contexts/RentContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 
@@ -22,6 +23,8 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(rent-tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="module-selection" options={{ headerShown: false }} />
       <Stack.Screen 
         name="add-loan" 
         options={{ 
@@ -105,9 +108,11 @@ export default function RootLayout() {
                   <BackupSettingsProvider>
                     <CustomerProvider>
                       <LoanProvider>
-                        <GestureHandlerRootView style={{ flex: 1 }}>
-                          <RootLayoutNav />
-                        </GestureHandlerRootView>
+                        <RentProvider>
+                          <GestureHandlerRootView style={{ flex: 1 }}>
+                            <RootLayoutNav />
+                          </GestureHandlerRootView>
+                        </RentProvider>
                       </LoanProvider>
                     </CustomerProvider>
                   </BackupSettingsProvider>
