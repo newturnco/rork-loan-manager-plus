@@ -12,11 +12,11 @@ import {
   Modal,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload, Clock, Calendar as CalendarIcon, Crown } from 'lucide-react-native';
+import { Trash2, Info, MessageCircle, HelpCircle, Bell, DollarSign, ChevronRight, Download, Upload, Clock, Calendar as CalendarIcon, Crown, FolderOpen, FileText } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useAlertSettings } from '@/contexts/AlertSettingsContext';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
-import { useBackupSettings, BackupFrequency } from '@/contexts/BackupSettingsContext';
+import { useBackupSettings, BackupFrequency, BackupLocation } from '@/contexts/BackupSettingsContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useCustomers } from '@/contexts/CustomerContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -41,6 +41,7 @@ export default function SettingsScreen() {
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showBackupFrequencyModal, setShowBackupFrequencyModal] = useState(false);
+  const [showBackupLocationModal, setShowBackupLocationModal] = useState(false);
 
   const handleBackup = async () => {
     try {
@@ -451,6 +452,22 @@ export default function SettingsScreen() {
               <ChevronRight color={Colors.textSecondary} size={20} />
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => setShowBackupLocationModal(true)}
+            >
+              <View style={styles.settingLeft}>
+                <FolderOpen color={Colors.warning} size={20} />
+                <View style={styles.settingText}>
+                  <Text style={styles.settingLabel}>Backup Location</Text>
+                  <Text style={styles.settingDescription}>
+                    {backupSettings.location === 'documents' ? 'Documents' : backupSettings.location === 'downloads' ? 'Downloads' : 'Cache'}
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight color={Colors.textSecondary} size={20} />
+            </TouchableOpacity>
+
             <View style={styles.settingRow}>
               <View style={styles.settingLeft}>
                 <View style={styles.settingText}>
@@ -464,11 +481,11 @@ export default function SettingsScreen() {
               </View>
               <TouchableOpacity
                 onPress={async () => {
-                  const result = await performAutoBackup();
+                  const result = await performAutoBackup(true);
                   if (result.success) {
                     Alert.alert('Success', result.message);
                   } else {
-                    Alert.alert('Info', result.message);
+                    Alert.alert('Error', result.message);
                   }
                 }}
                 style={styles.manualBackupButton}
@@ -492,6 +509,18 @@ export default function SettingsScreen() {
             title="Restore Data"
             subtitle="Import data from backup file"
             onPress={handleRestore}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Message Templates</Text>
+          <SettingCard
+            icon={<FileText color={Colors.info} size={24} />}
+            title="Customize Messages"
+            subtitle="Edit payment reminders and alert messages"
+            onPress={() => {
+              router.push('/message-templates' as any);
+            }}
           />
         </View>
 
@@ -587,6 +616,41 @@ export default function SettingsScreen() {
                   <Text style={styles.currencyItemName}>
                     {freq.charAt(0).toUpperCase() + freq.slice(1)}
                   </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showBackupLocationModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowBackupLocationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Backup Location</Text>
+              <TouchableOpacity onPress={() => setShowBackupLocationModal(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View>
+              {([{value: 'documents', label: 'Documents'}, {value: 'downloads', label: 'Downloads'}, {value: 'cache', label: 'Cache'}] as const).map((loc) => (
+                <TouchableOpacity
+                  key={loc.value}
+                  style={[
+                    styles.currencyItem,
+                    backupSettings.location === loc.value && styles.currencyItemSelected,
+                  ]}
+                  onPress={() => {
+                    updateBackupSettings({ location: loc.value });
+                    setShowBackupLocationModal(false);
+                  }}
+                >
+                  <Text style={styles.currencyItemName}>{loc.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>

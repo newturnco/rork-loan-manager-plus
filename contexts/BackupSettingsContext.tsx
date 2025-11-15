@@ -7,12 +7,14 @@ import * as Sharing from 'expo-sharing';
 
 
 export type BackupFrequency = 'daily' | 'weekly' | 'monthly' | 'off';
+export type BackupLocation = 'documents' | 'downloads' | 'cache';
 
 export interface BackupSettings {
   enabled: boolean;
   frequency: BackupFrequency;
   lastBackupDate: string | null;
   autoShare: boolean;
+  location: BackupLocation;
 }
 
 const BACKUP_SETTINGS_KEY = '@backupSettings';
@@ -22,6 +24,7 @@ const defaultSettings: BackupSettings = {
   frequency: 'weekly',
   lastBackupDate: null,
   autoShare: false,
+  location: 'documents',
 };
 
 export const [BackupSettingsProvider, useBackupSettings] = createContextHook(() => {
@@ -86,12 +89,27 @@ export const [BackupSettingsProvider, useBackupSettings] = createContextHook(() 
     }
   }, [settings]);
 
-  const performAutoBackup = useCallback(async () => {
+  const getBackupPath = useCallback((location: BackupLocation) => {
+    switch (location) {
+      case 'documents':
+        return Paths.document;
+      case 'downloads':
+        return Paths.document;
+      case 'cache':
+        return Paths.cache;
+      default:
+        return Paths.document;
+    }
+  }, []);
+
+  const performAutoBackup = useCallback(async (forceBackup?: boolean) => {
     try {
-      const shouldBackup = await checkAndPerformBackup();
-      
-      if (!shouldBackup) {
-        return { success: false, message: 'Backup not due yet' };
+      if (!forceBackup) {
+        const shouldBackup = await checkAndPerformBackup();
+        
+        if (!shouldBackup) {
+          return { success: false, message: 'Backup not due yet' };
+        }
       }
 
       const loans = await AsyncStorage.getItem('@loans');
@@ -100,11 +118,12 @@ export const [BackupSettingsProvider, useBackupSettings] = createContextHook(() 
       const customers = await AsyncStorage.getItem('@customers');
       const currencyData = await AsyncStorage.getItem('@currency');
       const alertSettings = await AsyncStorage.getItem('@alertSettings');
+      const messageTemplates = await AsyncStorage.getItem('@messageTemplates');
 
       const backup = {
         version: '1.0',
         timestamp: new Date().toISOString(),
-        type: 'automatic',
+        type: forceBackup ? 'manual' : 'automatic',
         data: {
           loans: loans ? JSON.parse(loans) : [],
           installments: installments ? JSON.parse(installments) : [],
@@ -112,32 +131,33 @@ export const [BackupSettingsProvider, useBackupSettings] = createContextHook(() 
           customers: customers ? JSON.parse(customers) : [],
           currency: currencyData ? JSON.parse(currencyData) : null,
           alertSettings: alertSettings ? JSON.parse(alertSettings) : null,
+          messageTemplates: messageTemplates ? JSON.parse(messageTemplates) : null,
         },
       };
 
-      const fileName = `LendTrack_AutoBackup_${new Date().toISOString().split('T')[0]}.json`;
-      const file = new File(Paths.document, fileName);
+      const fileName = `LendTrack_${forceBackup ? 'Manual' : 'Auto'}Backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`;
+      const backupPath = getBackupPath(settings.location);
+      const file = new File(backupPath, fileName);
+      
       await file.write(JSON.stringify(backup, null, 2));
 
       updateSettings({ lastBackupDate: new Date().toISOString() });
 
-      if (settings.autoShare) {
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(file.uri, {
-            mimeType: 'application/json',
-            dialogTitle: 'Automatic Backup',
-            UTI: 'public.json',
-          });
-        }
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare && (settings.autoShare || forceBackup)) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'application/json',
+          dialogTitle: forceBackup ? 'Manual Backup' : 'Automatic Backup',
+          UTI: 'public.json',
+        });
       }
 
-      return { success: true, message: 'Automatic backup completed', fileUri: file.uri };
+      return { success: true, message: 'Backup completed successfully', fileUri: file.uri };
     } catch (error) {
-      console.error('Error performing automatic backup:', error);
-      return { success: false, message: 'Backup failed', error };
+      console.error('Error performing backup:', error);
+      return { success: false, message: `Backup failed: ${error instanceof Error ? error.message : 'Unknown error'}`, error };
     }
-  }, [settings, checkAndPerformBackup, updateSettings]);
+  }, [settings, checkAndPerformBackup, updateSettings, getBackupPath]);
 
   useEffect(() => {
     if (settings.enabled) {
@@ -161,6 +181,7 @@ export const [BackupSettingsProvider, useBackupSettings] = createContextHook(() 
     updateSettings,
     performAutoBackup,
     checkAndPerformBackup,
+    getBackupPath,
     isLoading: settingsQuery.isLoading,
   };
 });

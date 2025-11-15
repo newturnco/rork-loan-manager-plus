@@ -9,6 +9,8 @@ import { AlertSettingsProvider } from "@/contexts/AlertSettingsContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { BackupSettingsProvider } from "@/contexts/BackupSettingsContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { MessageTemplateProvider } from "@/contexts/MessageTemplateContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 
@@ -69,6 +71,20 @@ function RootLayoutNav() {
           title: "Upgrade to Premium"
         }} 
       />
+      <Stack.Screen 
+        name="message-templates" 
+        options={{ 
+          presentation: "card",
+          title: "Message Templates"
+        }} 
+      />
+      <Stack.Screen 
+        name="notifications" 
+        options={{ 
+          presentation: "card",
+          title: "Notifications"
+        }} 
+      />
     </Stack>
   );
 }
@@ -84,15 +100,19 @@ export default function RootLayout() {
         <SubscriptionProvider>
           <CurrencyProvider>
             <AlertSettingsProvider>
-              <BackupSettingsProvider>
-                <CustomerProvider>
-                  <LoanProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      <RootLayoutNav />
-                    </GestureHandlerRootView>
-                  </LoanProvider>
-                </CustomerProvider>
-              </BackupSettingsProvider>
+              <MessageTemplateProvider>
+                <NotificationProvider>
+                  <BackupSettingsProvider>
+                    <CustomerProvider>
+                      <LoanProvider>
+                        <GestureHandlerRootView style={{ flex: 1 }}>
+                          <RootLayoutNav />
+                        </GestureHandlerRootView>
+                      </LoanProvider>
+                    </CustomerProvider>
+                  </BackupSettingsProvider>
+                </NotificationProvider>
+              </MessageTemplateProvider>
             </AlertSettingsProvider>
           </CurrencyProvider>
         </SubscriptionProvider>

@@ -1,7 +1,59 @@
 import { z } from 'zod';
 import { publicProcedure } from '../../../create-context';
 
-const API_URL = 'https://api.exchangerate-api.com/v4/latest';
+const FALLBACK_RATES: Record<string, Record<string, number>> = {
+  USD: {
+    AED: 3.67, EUR: 0.92, GBP: 0.79, SAR: 3.75, QAR: 3.64,
+    OMR: 0.38, KWD: 0.31, BHD: 0.38, INR: 83.12, PKR: 278.50, PHP: 56.35, USD: 1
+  },
+  AED: {
+    USD: 0.27, EUR: 0.25, GBP: 0.21, SAR: 1.02, QAR: 0.99,
+    OMR: 0.10, KWD: 0.08, BHD: 0.10, INR: 22.65, PKR: 75.89, PHP: 15.35, AED: 1
+  },
+  EUR: {
+    USD: 1.09, AED: 4.00, GBP: 0.86, SAR: 4.08, QAR: 3.97,
+    OMR: 0.42, KWD: 0.33, BHD: 0.41, INR: 90.50, PKR: 303.15, PHP: 61.35, EUR: 1
+  },
+  GBP: {
+    USD: 1.27, AED: 4.66, EUR: 1.16, SAR: 4.76, QAR: 4.62,
+    OMR: 0.49, KWD: 0.39, BHD: 0.48, INR: 105.50, PKR: 353.50, PHP: 71.55, GBP: 1
+  },
+  INR: {
+    USD: 0.012, AED: 0.044, EUR: 0.011, GBP: 0.0095, SAR: 0.045,
+    QAR: 0.044, OMR: 0.0046, KWD: 0.0037, BHD: 0.0046, PKR: 3.35, PHP: 0.68, INR: 1
+  },
+  SAR: {
+    USD: 0.27, AED: 0.98, EUR: 0.25, GBP: 0.21, QAR: 0.97,
+    OMR: 0.10, KWD: 0.08, BHD: 0.10, INR: 22.17, PKR: 74.27, PHP: 15.03, SAR: 1
+  },
+  QAR: {
+    USD: 0.27, AED: 1.01, EUR: 0.25, GBP: 0.22, SAR: 1.03,
+    OMR: 0.10, KWD: 0.08, BHD: 0.10, INR: 22.84, PKR: 76.51, PHP: 15.48, QAR: 1
+  },
+  OMR: {
+    USD: 2.60, AED: 9.55, EUR: 2.38, GBP: 2.04, SAR: 9.75,
+    QAR: 9.46, KWD: 0.81, BHD: 0.98, INR: 216.10, PKR: 724.10, PHP: 146.51, OMR: 1
+  },
+  KWD: {
+    USD: 3.25, AED: 11.94, EUR: 2.98, GBP: 2.56, SAR: 12.19,
+    QAR: 11.83, OMR: 1.25, BHD: 1.23, INR: 270.39, PKR: 905.63, PHP: 183.14, KWD: 1
+  },
+  BHD: {
+    USD: 2.65, AED: 9.73, EUR: 2.43, GBP: 2.08, SAR: 9.94,
+    QAR: 9.65, OMR: 1.02, KWD: 0.81, INR: 220.32, PKR: 738.33, PHP: 149.33, BHD: 1
+  },
+  PKR: {
+    USD: 0.0036, AED: 0.013, EUR: 0.0033, GBP: 0.0028, SAR: 0.013,
+    QAR: 0.013, OMR: 0.0014, KWD: 0.0011, BHD: 0.0014, INR: 0.30, PHP: 0.20, PKR: 1
+  },
+  PHP: {
+    USD: 0.018, AED: 0.065, EUR: 0.016, GBP: 0.014, SAR: 0.067,
+    QAR: 0.065, OMR: 0.0068, KWD: 0.0055, BHD: 0.0067, INR: 1.47, PKR: 4.94, PHP: 1
+  },
+};
+
+const PRIMARY_API_URL = 'https://api.exchangerate-api.com/v4/latest';
+const BACKUP_API_URL = 'https://open.er-api.com/v6/latest';
 
 export const getExchangeRatesProcedure = publicProcedure
   .input(
@@ -11,23 +63,49 @@ export const getExchangeRatesProcedure = publicProcedure
   )
   .query(async ({ input }) => {
     try {
-      const response = await fetch(`${API_URL}/${input.baseCurrency}`);
+      const response = await fetch(`${PRIMARY_API_URL}/${input.baseCurrency}`, {
+        headers: { 'Accept': 'application/json' },
+      });
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch exchange rates');
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          base: data.base,
+          date: data.date,
+          rates: data.rates as Record<string, number>,
+        };
       }
-
-      const data = await response.json();
-      
-      return {
-        base: data.base,
-        date: data.date,
-        rates: data.rates as Record<string, number>,
-      };
     } catch (error) {
-      console.error('Error fetching exchange rates:', error);
-      throw new Error('Failed to fetch exchange rates');
+      console.log('Primary API failed, trying backup:', error);
     }
+
+    try {
+      const response = await fetch(`${BACKUP_API_URL}/${input.baseCurrency}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          base: data.base_code || data.base,
+          date: data.time_last_update_utc || new Date().toISOString(),
+          rates: data.rates as Record<string, number>,
+        };
+      }
+    } catch (error) {
+      console.log('Backup API failed, using fallback rates:', error);
+    }
+
+    if (FALLBACK_RATES[input.baseCurrency]) {
+      console.log('Using fallback exchange rates for', input.baseCurrency);
+      return {
+        base: input.baseCurrency,
+        date: new Date().toISOString().split('T')[0],
+        rates: FALLBACK_RATES[input.baseCurrency],
+      };
+    }
+
+    throw new Error('Failed to fetch exchange rates from all sources');
   });
 
 export const convertCurrencyProcedure = publicProcedure
@@ -50,14 +128,39 @@ export const convertCurrencyProcedure = publicProcedure
         };
       }
 
-      const response = await fetch(`${API_URL}/${input.fromCurrency}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch exchange rates');
+      let rate: number | undefined;
+
+      try {
+        const response = await fetch(`${PRIMARY_API_URL}/${input.fromCurrency}`, {
+          headers: { 'Accept': 'application/json' },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          rate = data.rates[input.toCurrency];
+        }
+      } catch (error) {
+        console.log('Primary API failed for conversion:', error);
       }
 
-      const data = await response.json();
-      const rate = data.rates[input.toCurrency];
+      if (!rate) {
+        try {
+          const response = await fetch(`${BACKUP_API_URL}/${input.fromCurrency}`, {
+            headers: { 'Accept': 'application/json' },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            rate = data.rates[input.toCurrency];
+          }
+        } catch (error) {
+          console.log('Backup API failed for conversion:', error);
+        }
+      }
+
+      if (!rate && FALLBACK_RATES[input.fromCurrency]) {
+        rate = FALLBACK_RATES[input.fromCurrency][input.toCurrency];
+      }
       
       if (!rate) {
         throw new Error(`Exchange rate not found for ${input.toCurrency}`);
