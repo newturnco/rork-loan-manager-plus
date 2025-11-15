@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,22 +14,57 @@ import {
   TrendingUp,
   Building2,
   ArrowRight,
+  Clock4,
 } from 'lucide-react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModule, ManagementModule } from '@/contexts/ModuleContext';
 
 export default function ModuleSelectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { selectModule, selectedModule } = useModule();
 
-  const handleModuleSelect = async (module: 'loan' | 'rent') => {
-    await AsyncStorage.setItem('selectedModule', module);
+  const moduleDescriptions = useMemo(
+    () => ({
+      loan: {
+        title: 'Loan Management',
+        subtitle: 'Track loans, payments & interest',
+        gradient: ['#667eea', '#764ba2'],
+        icon: Wallet,
+        features: [
+          'Track loans & borrowers',
+          'Automated payment schedules',
+          'Interest calculations',
+          'Payment reminders & alerts',
+          'Detailed reports & analytics',
+        ],
+      },
+      rent: {
+        title: 'Rent Management',
+        subtitle: 'Manage properties & tenants',
+        gradient: ['#f093fb', '#f5576c'],
+        icon: Home,
+        features: [
+          'Property portfolio tracking',
+          'Tenant management workflows',
+          'Rent collection ledger',
+          'Automated rent reminders',
+          'Maintenance & service logs',
+          'Payment gateway & UPI tracking',
+        ],
+      },
+    }),
+    [],
+  );
 
+  const handleModuleSelect = async (module: ManagementModule) => {
+    console.log('[ModuleSelection] Module chosen', module);
+    await selectModule(module);
     if (module === 'loan') {
       router.replace('/(tabs)/loan-dashboard');
-    } else {
-      router.replace('/(rent-tabs)/rent-dashboard');
+      return;
     }
+    router.replace('/(rent-tabs)/rent-dashboard');
   };
 
   const ModuleCard = ({
@@ -71,7 +107,9 @@ export default function ModuleSelectionScreen() {
           {features.map((feature, index) => (
             <View key={index} style={styles.featureItem}>
               <View style={styles.featureDot} />
-              <Text style={styles.featureText}>{feature}</Text>
+              <Text style={styles.featureText}>
+            {feature}
+          </Text>
             </View>
           ))}
         </View>
@@ -99,35 +137,36 @@ export default function ModuleSelectionScreen() {
           </Text>
         </View>
 
+        {selectedModule ? (
+          <TouchableOpacity
+            style={styles.quickResume}
+            activeOpacity={0.85}
+            onPress={() => handleModuleSelect(selectedModule)}
+            testID="module-selection-quick-resume"
+          >
+            <Clock4 color="#FFFFFF" size={20} />
+            <Text style={styles.quickResumeText}>
+              Continue with {selectedModule === 'loan' ? 'Loan Management' : 'Rent Management'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <View style={styles.modulesContainer}>
           <ModuleCard
-            title="Loan Management"
-            description="Track loans, payments & interest"
-            Icon={Wallet}
-            features={[
-              'Track loans & borrowers',
-              'Automated payment schedules',
-              'Interest calculations',
-              'Payment reminders & alerts',
-              'Detailed reports & analytics',
-            ]}
-            gradient={['#667eea', '#764ba2']}
+            title={moduleDescriptions.loan.title}
+            description={moduleDescriptions.loan.subtitle}
+            Icon={moduleDescriptions.loan.icon}
+            features={moduleDescriptions.loan.features}
+            gradient={moduleDescriptions.loan.gradient}
             onPress={() => handleModuleSelect('loan')}
           />
 
           <ModuleCard
-            title="Rent Management"
-            description="Manage properties & tenants"
-            Icon={Home}
-            features={[
-              'Property portfolio tracking',
-              'Tenant management',
-              'Rent collection & tracking',
-              'Automated rent reminders',
-              'Maintenance requests',
-              'Payment gateway integration',
-            ]}
-            gradient={['#f093fb', '#f5576c']}
+            title={moduleDescriptions.rent.title}
+            description={moduleDescriptions.rent.subtitle}
+            Icon={moduleDescriptions.rent.icon}
+            features={moduleDescriptions.rent.features}
+            gradient={moduleDescriptions.rent.gradient}
             onPress={() => handleModuleSelect('rent')}
           />
         </View>
@@ -191,7 +230,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: Platform.OS === 'android' ? 8 : 0,
   },
   cardGradient: {
     flex: 1,
@@ -277,5 +316,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFFFFF',
     fontWeight: '500' as const,
+  },
+  quickResume: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    marginBottom: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.24)',
+  },
+  quickResumeText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
   },
 });

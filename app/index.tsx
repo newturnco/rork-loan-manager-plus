@@ -1,44 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '../constants/colors';
+import { useModule } from '@/contexts/ModuleContext';
 
 export default function RootEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isInitializing } = useModule();
   const [status, setStatus] = useState<'checking' | 'redirecting'>('checking');
 
   useEffect(() => {
-    let isMounted = true;
-    const bootstrap = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('selectedModule');
-        if (!isMounted) {
-          return;
-        }
-        setStatus('redirecting');
-        if (stored === 'rent') {
-          router.replace('/(rent-tabs)/rent-dashboard');
-          return;
-        }
-        if (stored === 'loan') {
-          router.replace('/(tabs)/loan-dashboard');
-          return;
-        }
-        router.replace('/module-selection');
-      } catch (error) {
-        console.error('Failed to determine initial module', error);
-        router.replace('/module-selection');
-      }
-    };
-    void bootstrap();
-    return () => {
-      isMounted = false;
-    };
-  }, [router]);
+    if (isInitializing) {
+      return;
+    }
+    setStatus('redirecting');
+    console.log('[RootEntry] Navigating to module selection');
+    router.replace('/module-selection');
+  }, [isInitializing, router]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]} testID="initial-loader">

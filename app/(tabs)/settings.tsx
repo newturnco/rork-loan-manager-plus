@@ -27,6 +27,7 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useModule } from '@/contexts/ModuleContext';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
   const queryClient = useQueryClient();
   const { settings: backupSettings, updateSettings: updateBackupSettings, performAutoBackup } = useBackupSettings();
   const { contentMaxWidth, horizontalPadding } = useResponsive();
+  const { resetModule } = useModule();
   const [daysBeforeDue, setDaysBeforeDue] = useState(settings.daysBeforeDue.toString());
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showBackupFrequencyModal, setShowBackupFrequencyModal] = useState(false);
@@ -208,7 +210,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             try {
               console.log('[Settings] Switching management module');
-              await AsyncStorage.removeItem('selectedModule');
+              await resetModule();
               router.replace('/module-selection');
             } catch (error) {
               console.error('[Settings] Failed to switch module', error);

@@ -1,5 +1,5 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useState, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Property,
@@ -9,7 +9,6 @@ import {
   RentPayment,
   MaintenanceRequest,
   RentDashboardStats,
-  RentPaymentStatus,
 } from '@/types/rent';
 
 const STORAGE_KEYS = {
@@ -26,13 +25,9 @@ export const [RentProvider, useRent] = createContextHook(() => {
   const [agreements, setAgreements] = useState<RentAgreement[]>([]);
   const [payments, setPayments] = useState<RentPayment[]>([]);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [propertiesData, tenantsData, agreementsData, paymentsData, maintenanceData] =
@@ -54,159 +49,256 @@ export const [RentProvider, useRent] = createContextHook(() => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const saveData = async (
-    key: string,
-    data: Property[] | Tenant[] | RentAgreement[] | RentPayment[] | MaintenanceRequest[]
-  ) => {
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  const saveData = useCallback(
+    async (
+      key: string,
+      data: Property[] | Tenant[] | RentAgreement[] | RentPayment[] | MaintenanceRequest[],
+    ) => {
+      try {
+        await AsyncStorage.setItem(key, JSON.stringify(data));
+      } catch (error) {
+        console.error(`Error saving ${key}:`, error);
+      }
+    },
+    [],
+  );
+
+  const addProperty = useCallback(
+    (property: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const newProperty: Property = {
+        ...property,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setProperties((prev) => {
+        const updated = [...prev, newProperty];
+        void saveData(STORAGE_KEYS.PROPERTIES, updated);
+        return updated;
+      });
+      return newProperty;
+    },
+    [saveData],
+  );
+
+  const updateProperty = useCallback(
+    (id: string, updates: Partial<Property>) => {
+      setProperties((prev) => {
+        const updated = prev.map((p) =>
+          p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p,
+        );
+        void saveData(STORAGE_KEYS.PROPERTIES, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const deleteProperty = useCallback(
+    (id: string) => {
+      setProperties((prev) => {
+        const updated = prev.filter((p) => p.id !== id);
+        void saveData(STORAGE_KEYS.PROPERTIES, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const addTenant = useCallback(
+    (tenant: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const newTenant: Tenant = {
+        ...tenant,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setTenants((prev) => {
+        const updated = [...prev, newTenant];
+        void saveData(STORAGE_KEYS.TENANTS, updated);
+        return updated;
+      });
+      return newTenant;
+    },
+    [saveData],
+  );
+
+  const updateTenant = useCallback(
+    (id: string, updates: Partial<Tenant>) => {
+      setTenants((prev) => {
+        const updated = prev.map((t) =>
+          t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t,
+        );
+        void saveData(STORAGE_KEYS.TENANTS, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const deleteTenant = useCallback(
+    (id: string) => {
+      setTenants((prev) => {
+        const updated = prev.filter((t) => t.id !== id);
+        void saveData(STORAGE_KEYS.TENANTS, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const addAgreement = useCallback(
+    (agreement: Omit<RentAgreement, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const newAgreement: RentAgreement = {
+        ...agreement,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setAgreements((prev) => {
+        const updated = [...prev, newAgreement];
+        void saveData(STORAGE_KEYS.AGREEMENTS, updated);
+        return updated;
+      });
+      updateProperty(agreement.propertyId, { status: 'occupied' as PropertyStatus });
+      return newAgreement;
+    },
+    [saveData, updateProperty],
+  );
+
+  const updateAgreement = useCallback(
+    (id: string, updates: Partial<RentAgreement>) => {
+      setAgreements((prev) => {
+        const updated = prev.map((a) =>
+          a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a,
+        );
+        void saveData(STORAGE_KEYS.AGREEMENTS, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const deleteAgreement = useCallback(
+    (id: string) => {
+      setAgreements((prev) => {
+        const agreement = prev.find((a) => a.id === id);
+        if (agreement) {
+          updateProperty(agreement.propertyId, { status: 'available' as PropertyStatus });
+        }
+        const updated = prev.filter((a) => a.id !== id);
+        void saveData(STORAGE_KEYS.AGREEMENTS, updated);
+        return updated;
+      });
+    },
+    [saveData, updateProperty],
+  );
+
+  const addPayment = useCallback(
+    (payment: Omit<RentPayment, 'id' | 'createdAt'>) => {
+      const newPayment: RentPayment = {
+        ...payment,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+      setPayments((prev) => {
+        const updated = [...prev, newPayment];
+        void saveData(STORAGE_KEYS.PAYMENTS, updated);
+        return updated;
+      });
+      return newPayment;
+    },
+    [saveData],
+  );
+
+  const updatePayment = useCallback(
+    (id: string, updates: Partial<RentPayment>) => {
+      setPayments((prev) => {
+        const updated = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
+        void saveData(STORAGE_KEYS.PAYMENTS, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const deletePayment = useCallback(
+    (id: string) => {
+      setPayments((prev) => {
+        const updated = prev.filter((p) => p.id !== id);
+        void saveData(STORAGE_KEYS.PAYMENTS, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const addMaintenanceRequest = useCallback(
+    (request: Omit<MaintenanceRequest, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const newRequest: MaintenanceRequest = {
+        ...request,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setMaintenanceRequests((prev) => {
+        const updated = [...prev, newRequest];
+        void saveData(STORAGE_KEYS.MAINTENANCE, updated);
+        return updated;
+      });
+      return newRequest;
+    },
+    [saveData],
+  );
+
+  const updateMaintenanceRequest = useCallback(
+    (id: string, updates: Partial<MaintenanceRequest>) => {
+      setMaintenanceRequests((prev) => {
+        const updated = prev.map((r) =>
+          r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r,
+        );
+        void saveData(STORAGE_KEYS.MAINTENANCE, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const deleteMaintenanceRequest = useCallback(
+    (id: string) => {
+      setMaintenanceRequests((prev) => {
+        const updated = prev.filter((r) => r.id !== id);
+        void saveData(STORAGE_KEYS.MAINTENANCE, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const clearAll = useCallback(async () => {
     try {
-      await AsyncStorage.setItem(key, JSON.stringify(data));
+      setProperties([]);
+      setTenants([]);
+      setAgreements([]);
+      setPayments([]);
+      setMaintenanceRequests([]);
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.PROPERTIES,
+        STORAGE_KEYS.TENANTS,
+        STORAGE_KEYS.AGREEMENTS,
+        STORAGE_KEYS.PAYMENTS,
+        STORAGE_KEYS.MAINTENANCE,
+      ]);
     } catch (error) {
-      console.error(`Error saving ${key}:`, error);
+      console.error('Error clearing rent data:', error);
     }
-  };
-
-  const addProperty = (property: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newProperty: Property = {
-      ...property,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const updated = [...properties, newProperty];
-    setProperties(updated);
-    saveData(STORAGE_KEYS.PROPERTIES, updated);
-    return newProperty;
-  };
-
-  const updateProperty = (id: string, updates: Partial<Property>) => {
-    const updated = properties.map((p) =>
-      p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-    );
-    setProperties(updated);
-    saveData(STORAGE_KEYS.PROPERTIES, updated);
-  };
-
-  const deleteProperty = (id: string) => {
-    const updated = properties.filter((p) => p.id !== id);
-    setProperties(updated);
-    saveData(STORAGE_KEYS.PROPERTIES, updated);
-  };
-
-  const addTenant = (tenant: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newTenant: Tenant = {
-      ...tenant,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const updated = [...tenants, newTenant];
-    setTenants(updated);
-    saveData(STORAGE_KEYS.TENANTS, updated);
-    return newTenant;
-  };
-
-  const updateTenant = (id: string, updates: Partial<Tenant>) => {
-    const updated = tenants.map((t) =>
-      t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
-    );
-    setTenants(updated);
-    saveData(STORAGE_KEYS.TENANTS, updated);
-  };
-
-  const deleteTenant = (id: string) => {
-    const updated = tenants.filter((t) => t.id !== id);
-    setTenants(updated);
-    saveData(STORAGE_KEYS.TENANTS, updated);
-  };
-
-  const addAgreement = (agreement: Omit<RentAgreement, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newAgreement: RentAgreement = {
-      ...agreement,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const updated = [...agreements, newAgreement];
-    setAgreements(updated);
-    saveData(STORAGE_KEYS.AGREEMENTS, updated);
-    
-    updateProperty(agreement.propertyId, { status: 'occupied' as PropertyStatus });
-    
-    return newAgreement;
-  };
-
-  const updateAgreement = (id: string, updates: Partial<RentAgreement>) => {
-    const updated = agreements.map((a) =>
-      a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a
-    );
-    setAgreements(updated);
-    saveData(STORAGE_KEYS.AGREEMENTS, updated);
-  };
-
-  const deleteAgreement = (id: string) => {
-    const agreement = agreements.find((a) => a.id === id);
-    if (agreement) {
-      updateProperty(agreement.propertyId, { status: 'available' as PropertyStatus });
-    }
-    const updated = agreements.filter((a) => a.id !== id);
-    setAgreements(updated);
-    saveData(STORAGE_KEYS.AGREEMENTS, updated);
-  };
-
-  const addPayment = (payment: Omit<RentPayment, 'id' | 'createdAt'>) => {
-    const newPayment: RentPayment = {
-      ...payment,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    };
-    const updated = [...payments, newPayment];
-    setPayments(updated);
-    saveData(STORAGE_KEYS.PAYMENTS, updated);
-    return newPayment;
-  };
-
-  const updatePayment = (id: string, updates: Partial<RentPayment>) => {
-    const updated = payments.map((p) => (p.id === id ? { ...p, ...updates } : p));
-    setPayments(updated);
-    saveData(STORAGE_KEYS.PAYMENTS, updated);
-  };
-
-  const deletePayment = (id: string) => {
-    const updated = payments.filter((p) => p.id !== id);
-    setPayments(updated);
-    saveData(STORAGE_KEYS.PAYMENTS, updated);
-  };
-
-  const addMaintenanceRequest = (
-    request: Omit<MaintenanceRequest, 'id' | 'createdAt' | 'updatedAt'>
-  ) => {
-    const newRequest: MaintenanceRequest = {
-      ...request,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const updated = [...maintenanceRequests, newRequest];
-    setMaintenanceRequests(updated);
-    saveData(STORAGE_KEYS.MAINTENANCE, updated);
-    return newRequest;
-  };
-
-  const updateMaintenanceRequest = (id: string, updates: Partial<MaintenanceRequest>) => {
-    const updated = maintenanceRequests.map((r) =>
-      r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r
-    );
-    setMaintenanceRequests(updated);
-    saveData(STORAGE_KEYS.MAINTENANCE, updated);
-  };
-
-  const deleteMaintenanceRequest = (id: string) => {
-    const updated = maintenanceRequests.filter((r) => r.id !== id);
-    setMaintenanceRequests(updated);
-    saveData(STORAGE_KEYS.MAINTENANCE, updated);
-  };
+  }, []);
 
   const dashboardStats = useMemo<RentDashboardStats>(() => {
     const now = new Date();
@@ -217,18 +309,16 @@ export const [RentProvider, useRent] = createContextHook(() => {
     const vacantProperties = properties.filter((p) => p.status === 'available').length;
 
     const activeTenantIds = new Set(
-      agreements.filter((a) => a.status === 'active').map((a) => a.tenantId)
+      agreements.filter((a) => a.status === 'active').map((a) => a.tenantId),
     );
 
     const paidPayments = payments.filter((p) => p.status === 'paid');
     const totalRentCollected = paidPayments.reduce((sum, p) => sum + p.paidAmount, 0);
 
-    const pendingPayments = payments.filter(
-      (p) => p.status === 'pending' || p.status === 'overdue'
-    );
+    const pendingPayments = payments.filter((p) => p.status === 'pending' || p.status === 'overdue');
     const pendingRent = pendingPayments.reduce(
       (sum, p) => sum + (p.amount - p.paidAmount),
-      0
+      0,
     );
 
     const overduePayments = payments.filter((p) => {
@@ -240,7 +330,7 @@ export const [RentProvider, useRent] = createContextHook(() => {
 
     const monthlyIncome = paidPayments
       .filter((p) => {
-        const paymentDate = new Date(p.paymentDate || p.createdAt);
+        const paymentDate = new Date(p.paymentDate ?? p.createdAt);
         return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
       })
       .reduce((sum, p) => sum + p.paidAmount, 0);
@@ -281,28 +371,62 @@ export const [RentProvider, useRent] = createContextHook(() => {
     };
   }, [properties, tenants, agreements, payments, maintenanceRequests]);
 
-  return {
-    properties,
-    tenants,
-    agreements,
-    payments,
-    maintenanceRequests,
-    isLoading,
-    dashboardStats,
-    addProperty,
-    updateProperty,
-    deleteProperty,
-    addTenant,
-    updateTenant,
-    deleteTenant,
-    addAgreement,
-    updateAgreement,
-    deleteAgreement,
-    addPayment,
-    updatePayment,
-    deletePayment,
-    addMaintenanceRequest,
-    updateMaintenanceRequest,
-    deleteMaintenanceRequest,
-  };
+  const refreshAll = useCallback(async () => {
+    await loadData();
+  }, [loadData]);
+
+  return useMemo(
+    () => ({
+      properties,
+      tenants,
+      agreements,
+      payments,
+      maintenanceRequests,
+      isLoading,
+      dashboardStats,
+      addProperty,
+      updateProperty,
+      deleteProperty,
+      addTenant,
+      updateTenant,
+      deleteTenant,
+      addAgreement,
+      updateAgreement,
+      deleteAgreement,
+      addPayment,
+      updatePayment,
+      deletePayment,
+      addMaintenanceRequest,
+      updateMaintenanceRequest,
+      deleteMaintenanceRequest,
+      refreshAll,
+      clearAll,
+    }),
+    [
+      properties,
+      tenants,
+      agreements,
+      payments,
+      maintenanceRequests,
+      isLoading,
+      dashboardStats,
+      addProperty,
+      updateProperty,
+      deleteProperty,
+      addTenant,
+      updateTenant,
+      deleteTenant,
+      addAgreement,
+      updateAgreement,
+      deleteAgreement,
+      addPayment,
+      updatePayment,
+      deletePayment,
+      addMaintenanceRequest,
+      updateMaintenanceRequest,
+      deleteMaintenanceRequest,
+      refreshAll,
+      clearAll,
+    ],
+  );
 });

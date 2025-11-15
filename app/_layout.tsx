@@ -12,6 +12,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { MessageTemplateProvider } from "@/contexts/MessageTemplateContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { RentProvider } from "@/contexts/RentContext";
+import { ModuleProvider } from "@/contexts/ModuleContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 
@@ -109,9 +110,11 @@ export default function RootLayout() {
                     <CustomerProvider>
                       <LoanProvider>
                         <RentProvider>
-                          <GestureHandlerRootView style={{ flex: 1 }}>
-                            <RootLayoutNav />
-                          </GestureHandlerRootView>
+                          <ModuleProvider>
+                            <GestureHandlerRootView style={{ flex: 1 }}>
+                              <RootLayoutNav />
+                            </GestureHandlerRootView>
+                          </ModuleProvider>
                         </RentProvider>
                       </LoanProvider>
                     </CustomerProvider>
