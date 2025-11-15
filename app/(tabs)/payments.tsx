@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import NotificationBell from '@/components/NotificationBell';
 import { Search, Plus, DollarSign, Calendar, Trash2 } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -133,12 +134,16 @@ export default function PaymentsScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push('/add-payment')}
-              style={styles.headerButton}
-            >
-              <Plus color="#FFFFFF" size={24} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={() => router.push('/add-payment')}
+                style={styles.headerButton}
+                testID="payments-add-payment-button"
+              >
+                <Plus color="#FFFFFF" size={24} />
+              </TouchableOpacity>
+              <NotificationBell />
+            </View>
           ),
         }}
       />
@@ -205,8 +210,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   headerButton: {
-    marginRight: 16,
     padding: 8,
   },
   searchContainer: {

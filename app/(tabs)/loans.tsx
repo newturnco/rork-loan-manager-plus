@@ -8,6 +8,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import NotificationBell from '@/components/NotificationBell';
 import { Search, Plus, Filter } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -151,12 +152,16 @@ export default function LoansScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push('/add-loan')}
-              style={styles.headerButton}
-            >
-              <Plus color="#FFFFFF" size={24} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={() => router.push('/add-loan')}
+                style={styles.headerButton}
+                testID="loans-add-loan-button"
+              >
+                <Plus color="#FFFFFF" size={24} />
+              </TouchableOpacity>
+              <NotificationBell />
+            </View>
           ),
         }}
       />
@@ -237,8 +242,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   headerButton: {
-    marginRight: 16,
     padding: 8,
   },
   searchContainer: {

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Stack } from 'expo-router';
+import NotificationBell from '@/components/NotificationBell';
 import { FileText, Download, TrendingUp, Calendar, User, X, FileSpreadsheet, Send } from 'lucide-react-native';
 import { useLoans } from '@/contexts/LoanContext';
 import { useCustomers } from '@/contexts/CustomerContext';
@@ -427,13 +428,21 @@ End Date: ${formatDate(loan.endDate)}
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity onPress={() => setExportMenuVisible(true)} style={styles.headerButton} disabled={isExporting}>
-              {isExporting ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Download color="#FFFFFF" size={24} />
-              )}
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={() => setExportMenuVisible(true)}
+                style={styles.headerButton}
+                disabled={isExporting}
+                testID="reports-export-button"
+              >
+                {isExporting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Download color="#FFFFFF" size={24} />
+                )}
+              </TouchableOpacity>
+              <NotificationBell />
+            </View>
           ),
         }}
       />
@@ -776,8 +785,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   headerButton: {
-    marginRight: 16,
     padding: 8,
   },
   scrollView: {

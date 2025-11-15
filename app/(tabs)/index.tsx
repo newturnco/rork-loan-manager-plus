@@ -8,6 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import NotificationBell from '@/components/NotificationBell';
 import {
   TrendingUp,
   TrendingDown,
@@ -68,12 +69,16 @@ export default function DashboardScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push('/add-loan')}
-              style={styles.addButton}
-            >
-              <Plus color="#FFFFFF" size={24} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={() => router.push('/add-loan')}
+                style={styles.addButton}
+                testID="dashboard-add-loan-button"
+              >
+                <Plus color="#FFFFFF" size={24} />
+              </TouchableOpacity>
+              <NotificationBell />
+            </View>
           ),
         }}
       />
@@ -284,8 +289,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingBottom: 32,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   addButton: {
-    marginRight: 16,
     padding: 8,
   },
   header: {
