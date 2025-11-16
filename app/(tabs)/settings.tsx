@@ -44,6 +44,8 @@ export default function SettingsScreen() {
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showBackupFrequencyModal, setShowBackupFrequencyModal] = useState(false);
   const [showBackupLocationModal, setShowBackupLocationModal] = useState(false);
+  const [showSwitchModuleModal, setShowSwitchModuleModal] = useState(false);
+  const [isSwitchingModule, setIsSwitchingModule] = useState<boolean>(false);
 
   const handleBackup = async () => {
     try {
@@ -200,26 +202,23 @@ export default function SettingsScreen() {
   };
 
   const handleSwitchModule = () => {
-    Alert.alert(
-      'Switch Module',
-      'Select which experience you want to manage next.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Continue',
-          onPress: async () => {
-            try {
-              console.log('[Settings] Switching management module');
-              await resetModule();
-              router.replace('/module-selection');
-            } catch (error) {
-              console.error('[Settings] Failed to switch module', error);
-              Alert.alert('Error', 'Unable to switch module right now. Please try again.');
-            }
-          },
-        },
-      ],
-    );
+    console.log('[Settings] Preparing to switch management module');
+    setShowSwitchModuleModal(true);
+  };
+
+  const confirmSwitchModule = async () => {
+    try {
+      setIsSwitchingModule(true);
+      console.log('[Settings] Switching management module');
+      await resetModule();
+      setShowSwitchModuleModal(false);
+      router.replace('/module-selection');
+    } catch (error) {
+      console.error('[Settings] Failed to switch module', error);
+      Alert.alert('Error', 'Unable to switch module right now. Please try again.');
+    } finally {
+      setIsSwitchingModule(false);
+    }
   };
 
   const SettingCard = ({
@@ -228,16 +227,19 @@ export default function SettingsScreen() {
     subtitle,
     onPress,
     danger,
+    testID,
   }: {
     icon: React.ReactNode;
     title: string;
     subtitle: string;
     onPress: () => void;
     danger?: boolean;
+    testID?: string;
   }) => (
     <TouchableOpacity
       style={[styles.settingCard, danger && styles.dangerCard]}
       onPress={onPress}
+      testID={testID}
     >
       <View style={[styles.iconContainer, danger && styles.dangerIcon]}>
         {React.isValidElement(icon) ? icon : null}
@@ -556,6 +558,7 @@ export default function SettingsScreen() {
             title="Switch Module"
             subtitle="Jump between Loan and Rent dashboards"
             onPress={handleSwitchModule}
+            testID="settings-switch-module-card"
           />
         </View>
 
@@ -688,6 +691,47 @@ export default function SettingsScreen() {
                   <Text style={styles.currencyItemName}>{loc.label}</Text>
                 </TouchableOpacity>
               ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showSwitchModuleModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => {
+          if (isSwitchingModule) {
+            return;
+          }
+          setShowSwitchModuleModal(false);
+        }}
+      >
+        <View style={styles.modalOverlayCentered}>
+          <View style={styles.switchModalContent}>
+            <Text style={styles.switchModalTitle}>Switch Module</Text>
+            <Text style={styles.switchModalDescription}>
+              Choose which experience you want to manage next. You can return here anytime.
+            </Text>
+            <View style={styles.switchModalActions}>
+              <TouchableOpacity
+                style={styles.switchModalSecondaryButton}
+                onPress={() => setShowSwitchModuleModal(false)}
+                disabled={isSwitchingModule}
+                testID="settings-switch-module-cancel"
+              >
+                <Text style={styles.switchModalSecondaryText}>Stay Here</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.switchModalPrimaryButton, isSwitchingModule && styles.switchModalPrimaryButtonDisabled]}
+                onPress={confirmSwitchModule}
+                disabled={isSwitchingModule}
+                testID="settings-switch-module-confirm"
+              >
+                <Text style={styles.switchModalPrimaryText}>
+                  {isSwitchingModule ? 'Switching...' : 'Go to Module Selection'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -886,6 +930,71 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 24,
     maxHeight: '70%',
+  },
+  modalOverlayCentered: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  switchModalContent: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    gap: 20,
+  },
+  switchModalTitle: {
+    fontSize: 22,
+    fontWeight: '700' as const,
+    color: Colors.text,
+  },
+  switchModalDescription: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    lineHeight: 22,
+  },
+  switchModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  switchModalSecondaryButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.background,
+  },
+  switchModalSecondaryText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  switchModalPrimaryButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+  },
+  switchModalPrimaryButtonDisabled: {
+    opacity: 0.7,
+  },
+  switchModalPrimaryText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
   },
   modalHeader: {
     flexDirection: 'row',
