@@ -61,10 +61,10 @@ export default function ModuleSelectionScreen() {
     console.log('[ModuleSelection] Module chosen', module);
     await selectModule(module);
     if (module === 'loan') {
-      router.replace('/(tabs)/loan-dashboard');
+      router.replace('/loan-dashboard');
       return;
     }
-    router.replace('/(rent-tabs)/rent-dashboard');
+    router.replace('/rent-dashboard');
   };
 
   const ModuleCard = ({

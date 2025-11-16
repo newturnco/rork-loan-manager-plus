@@ -16,11 +16,15 @@ export default function InitialScreen() {
     
     if (!selectedModule) {
       router.replace('/module-selection');
-    } else if (selectedModule === 'loan') {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/(rent-tabs)');
+      return;
     }
+
+    if (selectedModule === 'loan') {
+      router.replace('/loan-dashboard');
+      return;
+    }
+
+    router.replace('/rent-dashboard');
   };
 
   return (

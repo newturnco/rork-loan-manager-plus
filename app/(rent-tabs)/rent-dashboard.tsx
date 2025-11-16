@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import NotificationBell from '@/components/NotificationBell';
@@ -44,6 +45,26 @@ export default function RentDashboardScreen() {
   }, []);
 
   const handleSwitchModule = React.useCallback(() => {
+    const performSwitch = async () => {
+      try {
+        await selectModule('loan');
+        router.replace('/loan-dashboard');
+      } catch (error) {
+        console.error('[RentDashboard] Failed to switch module', error);
+        Alert.alert('Switch Failed', 'Unable to switch modules. Please try again.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const shouldSwitch = typeof window !== 'undefined'
+        ? window.confirm('Switch to Loan Management?')
+        : true;
+      if (shouldSwitch) {
+        void performSwitch();
+      }
+      return;
+    }
+
     Alert.alert(
       'Switch Module',
       'Do you want to switch to Loan Management?',
@@ -51,14 +72,8 @@ export default function RentDashboardScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Switch',
-          onPress: async () => {
-            try {
-              await selectModule('loan');
-              router.replace('/(tabs)/loan-dashboard');
-            } catch (error) {
-              console.error('[RentDashboard] Failed to switch module', error);
-              Alert.alert('Switch Failed', 'Unable to switch modules. Please try again.');
-            }
+          onPress: () => {
+            void performSwitch();
           },
         },
       ]
@@ -98,7 +113,13 @@ export default function RentDashboardScreen() {
           },
           headerTintColor: '#FFFFFF',
           headerLeft: () => (
-            <TouchableOpacity onPress={handleSwitchModule} style={styles.switchButton}>
+            <TouchableOpacity
+              onPress={handleSwitchModule}
+              style={styles.switchButton}
+              activeOpacity={0.7}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              testID="rent-dashboard-switch-module"
+            >
               <ArrowLeft color="#FFFFFF" size={24} />
             </TouchableOpacity>
           ),
@@ -107,6 +128,9 @@ export default function RentDashboardScreen() {
               <TouchableOpacity
                 onPress={() => router.push('/add-property')}
                 style={styles.addButton}
+                activeOpacity={0.7}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                testID="rent-dashboard-add-property"
               >
                 <Plus color="#FFFFFF" size={24} />
               </TouchableOpacity>
@@ -285,6 +309,9 @@ export default function RentDashboardScreen() {
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={() => router.push('/add-property')}
+              activeOpacity={0.8}
+              hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
+              testID="rent-empty-add-property"
             >
               <Plus color="#FFFFFF" size={20} />
               <Text style={styles.emptyButtonText}>Add First Property</Text>

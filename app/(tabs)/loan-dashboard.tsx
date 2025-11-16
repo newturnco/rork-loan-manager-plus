@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,6 +64,26 @@ export default function LoanDashboardScreen() {
   }, []);
 
   const handleSwitchModule = React.useCallback(() => {
+    const performSwitch = async () => {
+      try {
+        await selectModule('rent');
+        router.replace('/rent-dashboard');
+      } catch (error) {
+        console.error('[LoanDashboard] Failed to switch module', error);
+        Alert.alert('Switch Failed', 'Unable to switch modules. Please try again.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const shouldSwitch = typeof window !== 'undefined'
+        ? window.confirm('Switch to Rent Management?')
+        : true;
+      if (shouldSwitch) {
+        void performSwitch();
+      }
+      return;
+    }
+
     Alert.alert(
       'Switch Module',
       'Do you want to switch to Rent Management?',
@@ -70,14 +91,8 @@ export default function LoanDashboardScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Switch',
-          onPress: async () => {
-            try {
-              await selectModule('rent');
-              router.replace('/(rent-tabs)/rent-dashboard');
-            } catch (error) {
-              console.error('[LoanDashboard] Failed to switch module', error);
-              Alert.alert('Switch Failed', 'Unable to switch modules. Please try again.');
-            }
+          onPress: () => {
+            void performSwitch();
           },
         },
       ],
@@ -98,6 +113,8 @@ export default function LoanDashboardScreen() {
             <TouchableOpacity
               onPress={handleSwitchModule}
               style={styles.switchButton}
+              activeOpacity={0.7}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               testID="loan-dashboard-switch-module"
             >
               <ArrowRight color="#FFFFFF" size={24} />
@@ -111,6 +128,8 @@ export default function LoanDashboardScreen() {
                   router.push('/add-loan');
                 }}
                 style={styles.addButton}
+                activeOpacity={0.7}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 testID="dashboard-add-loan-button"
               >
                 <Plus color="#FFFFFF" size={24} />
@@ -322,6 +341,8 @@ export default function LoanDashboardScreen() {
                 console.log('Creating first loan');
                 router.push('/add-loan');
               }}
+              activeOpacity={0.8}
+              hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
               testID="empty-create-loan"
             >
               <Plus color="#FFFFFF" size={20} />
