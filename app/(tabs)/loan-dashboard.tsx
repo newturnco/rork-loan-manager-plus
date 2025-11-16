@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,12 +19,14 @@ import {
   AlertCircle,
   Plus,
   DollarSign,
+  ArrowRight,
 } from 'lucide-react-native';
 import { useLoans } from '../../contexts/LoanContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { formatCurrency, formatDate, getDaysUntil } from '../../utils/calculations';
 import Colors from '../../constants/colors';
 import { useResponsive } from '../../utils/responsive';
+import { useModule } from '../../contexts/ModuleContext';
 
 interface StatCardProps {
   label: string;
@@ -50,6 +53,7 @@ export default function LoanDashboardScreen() {
   const { dashboardStats, loans } = useLoans();
   const { currency } = useCurrency();
   const { isTablet, contentMaxWidth, horizontalPadding } = useResponsive();
+  const { selectModule } = useModule();
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
 
   const onRefresh = React.useCallback(() => {
@@ -57,6 +61,28 @@ export default function LoanDashboardScreen() {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
+
+  const handleSwitchModule = React.useCallback(() => {
+    Alert.alert(
+      'Switch Module',
+      'Do you want to switch to Rent Management?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Switch',
+          onPress: async () => {
+            try {
+              await selectModule('rent');
+              router.replace('/(rent-tabs)/rent-dashboard');
+            } catch (error) {
+              console.error('[LoanDashboard] Failed to switch module', error);
+              Alert.alert('Switch Failed', 'Unable to switch modules. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  }, [router, selectModule]);
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -68,6 +94,15 @@ export default function LoanDashboardScreen() {
             backgroundColor: Colors.primary,
           },
           headerTintColor: '#FFFFFF',
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={handleSwitchModule}
+              style={styles.switchButton}
+              testID="loan-dashboard-switch-module"
+            >
+              <ArrowRight color="#FFFFFF" size={24} />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
             <View style={styles.headerActions}>
               <TouchableOpacity
@@ -318,6 +353,10 @@ const styles = StyleSheet.create({
   },
   addButton: {
     padding: 8,
+  },
+  switchButton: {
+    padding: 8,
+    marginLeft: 4,
   },
   header: {
     marginBottom: 24,

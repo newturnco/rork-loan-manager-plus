@@ -28,13 +28,14 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCurrency, formatDate } from '@/utils/calculations';
 import Colors from '@/constants/colors';
 import { useResponsive } from '@/utils/responsive';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useModule } from '@/contexts/ModuleContext';
 
 export default function RentDashboardScreen() {
   const router = useRouter();
   const { dashboardStats, properties, tenants } = useRent();
   const { currency } = useCurrency();
   const { isTablet, contentMaxWidth, horizontalPadding } = useResponsive();
+  const { selectModule } = useModule();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(() => {
@@ -42,7 +43,7 @@ export default function RentDashboardScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
-  const handleSwitchModule = async () => {
+  const handleSwitchModule = React.useCallback(() => {
     Alert.alert(
       'Switch Module',
       'Do you want to switch to Loan Management?',
@@ -51,13 +52,18 @@ export default function RentDashboardScreen() {
         {
           text: 'Switch',
           onPress: async () => {
-            await AsyncStorage.setItem('selectedModule', 'loan');
-            router.replace('/(tabs)');
+            try {
+              await selectModule('loan');
+              router.replace('/(tabs)/loan-dashboard');
+            } catch (error) {
+              console.error('[RentDashboard] Failed to switch module', error);
+              Alert.alert('Switch Failed', 'Unable to switch modules. Please try again.');
+            }
           },
         },
       ]
     );
-  };
+  }, [router, selectModule]);
 
   const StatCard = ({
     label,
