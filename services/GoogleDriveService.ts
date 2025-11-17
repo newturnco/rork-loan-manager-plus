@@ -1,7 +1,12 @@
-import { File, Directory, Paths } from 'expo-file-system';
+import {
+  StorageAccessFramework,
+  documentDirectory,
+  readAsStringAsync,
+  writeAsStringAsync,
+} from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { makeRedirectUri } from 'expo-auth-session';
+import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
@@ -41,9 +46,8 @@ class GoogleDriveService {
         throw new Error('Google Drive client ID not configured');
       }
 
-      const redirectUri = makeRedirectUri({
+      const redirectUri = Linking.createURL('auth', {
         scheme: 'loanmanager',
-        path: 'auth',
       });
 
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${this.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(GOOGLE_DRIVE_SCOPE)}&access_type=offline&prompt=consent`;
@@ -318,10 +322,32 @@ class GoogleDriveService {
         URL.revokeObjectURL(url);
         return fileName;
       } else {
-        const file = new File(Paths.document, fileName);
-        file.create();
-        file.write(fileContent);
-        return file.uri;
+        if (!documentDirectory) {
+          console.error('Export backup error: document directory unavailable');
+          return null;
+        }
+
+        const fileUri = `${documentDirectory}${fileName}`;
+        await writeAsStringAsync(fileUri, fileContent);
+
+        if (Platform.OS === 'android' && StorageAccessFramework) {
+          try {
+            const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+            if (permissions.granted) {
+              const uri = await StorageAccessFramework.createFileAsync(
+                permissions.directoryUri,
+                fileName,
+                'application/json'
+              );
+              await writeAsStringAsync(uri, fileContent);
+              return uri;
+            }
+          } catch (error) {
+            console.error('Android storage access error:', error);
+          }
+        }
+
+        return fileUri;
       }
     } catch (error) {
       console.error('Export backup error:', error);
@@ -347,8 +373,7 @@ class GoogleDriveService {
         const text = await response.text();
         return JSON.parse(text);
       } else {
-        const file = new File(fileUri);
-        const fileContent = await file.text();
+        const fileContent = await readAsStringAsync(fileUri);
         return JSON.parse(fileContent);
       }
     } catch (error) {

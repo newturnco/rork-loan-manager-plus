@@ -1,5 +1,10 @@
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import {
+  StorageAccessFramework,
+  documentDirectory,
+  readAsStringAsync,
+  writeAsStringAsync,
+} from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Alert } from 'react-native';
 
@@ -89,32 +94,38 @@ class LocalBackupService {
         console.log('Backup exported successfully on web');
         return fileName;
       } else {
-        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(fileUri, fileContent);
+        if (!documentDirectory) {
+          console.error('Export backup error: document directory unavailable');
+          return null;
+        }
+
+        const fileUri = `${documentDirectory}${fileName}`;
+        await writeAsStringAsync(fileUri, fileContent);
         console.log('Backup saved to:', fileUri);
-        
+
         if (Platform.OS === 'android') {
           try {
-            const { StorageAccessFramework } = FileSystem;
-            const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
-            if (permissions.granted) {
-              const uri = await StorageAccessFramework.createFileAsync(
-                permissions.directoryUri,
-                fileName,
-                'application/json'
-              );
-              await FileSystem.writeAsStringAsync(uri, fileContent);
-              console.log('Backup saved to storage:', uri);
-              if (Platform.OS !== 'web') {
-                Alert.alert('Backup Saved', 'Your backup has been saved successfully.');
+            if (StorageAccessFramework) {
+              const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+              if (permissions.granted) {
+                const uri = await StorageAccessFramework.createFileAsync(
+                  permissions.directoryUri,
+                  fileName,
+                  'application/json'
+                );
+                await writeAsStringAsync(uri, fileContent);
+                console.log('Backup saved to storage:', uri);
+                if (Platform.OS !== 'web') {
+                  Alert.alert('Backup Saved', 'Your backup has been saved successfully.');
+                }
+                return uri;
               }
-              return uri;
             }
           } catch (error) {
             console.log('Android storage access error:', error);
           }
         }
-        
+
         if (Platform.OS === 'ios') {
           if (Platform.OS !== 'web') {
             Alert.alert(
@@ -124,7 +135,7 @@ class LocalBackupService {
             );
           }
         }
-        
+
         return fileUri;
       }
     } catch (error) {
@@ -157,7 +168,7 @@ class LocalBackupService {
         const response = await fetch(fileUri);
         fileContent = await response.text();
       } else {
-        fileContent = await FileSystem.readAsStringAsync(fileUri);
+        fileContent = await readAsStringAsync(fileUri);
       }
 
       const backup = JSON.parse(fileContent) as BackupData;
