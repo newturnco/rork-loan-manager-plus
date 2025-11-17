@@ -67,7 +67,7 @@ export default function LoanDashboardScreen() {
     const performSwitch = async () => {
       try {
         await selectModule('rent');
-        router.replace('/rent-dashboard');
+        router.replace('/(rent-tabs)/rent-dashboard');
       } catch (error) {
         console.error('[LoanDashboard] Failed to switch module', error);
         Alert.alert('Switch Failed', 'Unable to switch modules. Please try again.');
