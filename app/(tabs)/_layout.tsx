@@ -58,6 +58,18 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
+        name="index"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="index-redirect"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="loan-dashboard"
         options={{
           title: "Dashboard",

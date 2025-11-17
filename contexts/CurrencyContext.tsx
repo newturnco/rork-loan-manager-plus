@@ -1,8 +1,8 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useCallback } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { getExchangeRates, ExchangeRatesData } from '../services/ExchangeRateService';
 
 const CURRENCY_KEY = '@currency';
 
@@ -12,11 +12,7 @@ export interface Currency {
   name: string;
 }
 
-export interface ExchangeRates {
-  base: string;
-  date: string;
-  rates: Record<string, number>;
-}
+export type ExchangeRates = ExchangeRatesData;
 
 export const CURRENCIES: Currency[] = [
   { code: 'AED', symbol: 'AED', name: 'UAE Dirham' },
@@ -34,6 +30,7 @@ export const CURRENCIES: Currency[] = [
 ];
 
 const defaultCurrency: Currency = CURRENCIES[0];
+const SUPPORTED_CURRENCY_CODES = CURRENCIES.map((item) => item.code);
 
 export const [CurrencyProvider, useCurrency] = createContextHook(() => {
   const queryClient = useQueryClient();
@@ -67,15 +64,20 @@ export const [CurrencyProvider, useCurrency] = createContextHook(() => {
     },
   });
 
-  const exchangeRatesQuery = trpc.currency.getExchangeRates.useQuery(
-    { baseCurrency: currency.code },
-    { enabled: !!currency.code, refetchInterval: 3600000 }
-  );
+  const { mutate: persistCurrency } = saveCurrencyMutation;
+
+  const exchangeRatesQuery = useQuery<ExchangeRates>({
+    queryKey: ['exchange-rates', currency.code],
+    queryFn: async () => getExchangeRates(currency.code, SUPPORTED_CURRENCY_CODES),
+    enabled: currency.code.length > 0,
+    staleTime: 60 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
+  });
 
   const updateCurrency = useCallback((newCurrency: Currency) => {
     setCurrency(newCurrency);
-    saveCurrencyMutation.mutate(newCurrency);
-  }, []);
+    persistCurrency(newCurrency);
+  }, [persistCurrency]);
 
   const convertAmount = useCallback(
     (amount: number, fromCurrency: string, toCurrency: string): number => {
@@ -127,13 +129,26 @@ export const [CurrencyProvider, useCurrency] = createContextHook(() => {
     [exchangeRatesQuery.data]
   );
 
-  return {
-    currency,
-    updateCurrency,
-    convertAmount,
-    getExchangeRate,
-    exchangeRates: exchangeRatesQuery.data,
-    isLoading: currencyQuery.isLoading,
-    isLoadingRates: exchangeRatesQuery.isLoading,
-  };
+  const value = useMemo(
+    () => ({
+      currency,
+      updateCurrency,
+      convertAmount,
+      getExchangeRate,
+      exchangeRates: exchangeRatesQuery.data,
+      isLoading: currencyQuery.isLoading,
+      isLoadingRates: exchangeRatesQuery.isLoading,
+    }),
+    [
+      currency,
+      updateCurrency,
+      convertAmount,
+      getExchangeRate,
+      exchangeRatesQuery.data,
+      currencyQuery.isLoading,
+      exchangeRatesQuery.isLoading,
+    ],
+  );
+
+  return value;
 });
