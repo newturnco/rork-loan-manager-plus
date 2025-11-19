@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,25 +33,60 @@ import { useRouter } from 'expo-router';
 export default function RentReportsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { dashboardStats, payments } = useRent();
+  const { dashboardStats, payments, expenses } = useRent();
   const { currency } = useCurrency();
   const { contentMaxWidth, horizontalPadding } = useResponsive();
   const { selectedModule } = useModule();
   const [isGenerating, setIsGenerating] = React.useState<boolean>(false);
 
-  const monthlyTrend = React.useMemo(() => {
-    const buckets = new Map<string, number>();
+  const financialTrend = React.useMemo(() => {
+    const incomeBuckets = new Map<string, number>();
+    const expenseBuckets = new Map<string, number>();
+    
     payments.forEach((payment) => {
       if (payment.status !== 'paid') {
         return;
       }
       const date = new Date(payment.paymentDate ?? payment.createdAt);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      buckets.set(key, (buckets.get(key) ?? 0) + payment.paidAmount);
+      incomeBuckets.set(key, (incomeBuckets.get(key) ?? 0) + payment.paidAmount);
     });
-    const sorted = Array.from(buckets.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    return sorted.slice(-6);
-  }, [payments]);
+
+    expenses.forEach((expense) => {
+      const date = new Date(expense.date);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      expenseBuckets.set(key, (expenseBuckets.get(key) ?? 0) + expense.amount);
+    });
+
+    const allKeys = new Set([...incomeBuckets.keys(), ...expenseBuckets.keys()]);
+    const combined = Array.from(allKeys).map((key) => ({
+      period: key,
+      income: incomeBuckets.get(key) ?? 0,
+      expenses: expenseBuckets.get(key) ?? 0,
+      net: (incomeBuckets.get(key) ?? 0) - (expenseBuckets.get(key) ?? 0),
+    }));
+
+    return combined.sort((a, b) => a.period.localeCompare(b.period)).slice(-6);
+  }, [payments, expenses]);
+
+  const expensesByCategory = React.useMemo(() => {
+    const buckets = new Map<string, number>();
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    expenses.forEach((expense) => {
+      const expenseDate = new Date(expense.date);
+      if (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear) {
+        const category = expense.category || 'Other';
+        buckets.set(category, (buckets.get(category) ?? 0) + expense.amount);
+      }
+    });
+
+    return Array.from(buckets.entries())
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [expenses]);
 
   const handleGeneratePdf = React.useCallback(async () => {
     setIsGenerating(true);
@@ -89,10 +125,10 @@ export default function RentReportsScreen() {
             <section>
               <h2>Recent Collections</h2>
               <table>
-                <tr><th>Period</th><th>Collected</th></tr>
-                ${monthlyTrend
+                <tr><th>Period</th><th>Income</th><th>Expenses</th><th>Net</th></tr>
+                ${financialTrend
                   .map(
-                    ([period, amount]) => `<tr><td>${period}</td><td>${formatCurrency(amount, currency.code, currency.symbol)}</td></tr>`,
+                    (item) => `<tr><td>${item.period}</td><td>${formatCurrency(item.income, currency.code, currency.symbol)}</td><td>${formatCurrency(item.expenses, currency.code, currency.symbol)}</td><td>${formatCurrency(item.net, currency.code, currency.symbol)}</td></tr>`,
                   )
                   .join('')}
               </table>
@@ -117,7 +153,7 @@ export default function RentReportsScreen() {
     } finally {
       setIsGenerating(false);
     }
-  }, [currency.code, currency.symbol, dashboardStats, monthlyTrend, selectedModule]);
+  }, [currency.code, currency.symbol, dashboardStats, financialTrend, selectedModule]);
 
   const handleShareSummary = React.useCallback(() => {
     const summary = `Rent Portfolio Snapshot:
@@ -213,21 +249,48 @@ Overdue: ${formatCurrency(dashboardStats.overdueRent, currency.code, currency.sy
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Collections Trend</Text>
+            <Text style={styles.sectionTitle}>Financial Trend</Text>
             <BarChart color={Colors.primary} size={18} />
           </View>
-          {monthlyTrend.length === 0 ? (
-            <Text style={styles.emptyLabel}>No payments recorded yet.</Text>
+          {financialTrend.length === 0 ? (
+            <Text style={styles.emptyLabel}>No financial data recorded yet.</Text>
           ) : (
             <View style={styles.trendGrid}>
-              {monthlyTrend.map(([period, amount]) => (
-                <View key={period} style={styles.trendBar}>
-                  <View style={[styles.trendBarFill, { height: Math.min(100, amount / (dashboardStats.monthlyIncome || 1) * 80 + 20) }]} />
-                  <Text style={styles.trendLabel}>{period}</Text>
-                  <Text style={styles.trendValue}>{formatCurrency(amount, currency.code, currency.symbol)}</Text>
-                </View>
-              ))}
+              {financialTrend.map((item) => {
+                const maxValue = Math.max(...financialTrend.map((t) => Math.max(t.income, t.expenses)));
+                const incomeHeight = Math.min(120, (item.income / maxValue) * 100 + 20);
+                const expenseHeight = Math.min(120, (item.expenses / maxValue) * 100 + 20);
+                return (
+                  <View key={item.period} style={styles.trendBarGroup}>
+                    <View style={styles.trendBarsContainer}>
+                      <View style={[styles.trendBarFill, { height: incomeHeight, backgroundColor: Colors.success }]} />
+                      <View style={[styles.trendBarFill, { height: expenseHeight, backgroundColor: Colors.error }]} />
+                    </View>
+                    <Text style={styles.trendLabel}>{item.period}</Text>
+                    <Text style={[styles.trendValue, { color: item.net >= 0 ? Colors.success : Colors.error }]}>Net: {formatCurrency(item.net, currency.code, currency.symbol)}</Text>
+                  </View>
+                );
+              })}
             </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Monthly Expenses by Category</Text>
+            <Wallet color={Colors.error} size={18} />
+          </View>
+          {expensesByCategory.length === 0 ? (
+            <Text style={styles.emptyLabel}>No expenses recorded this month.</Text>
+          ) : (
+            expensesByCategory.map((item) => (
+              <View key={item.category} style={styles.categoryCard}>
+                <Text style={styles.categoryName}>{item.category}</Text>
+                <Text style={[styles.categoryAmount, { color: Colors.error }]}>
+                  {formatCurrency(item.amount, currency.code, currency.symbol)}
+                </Text>
+              </View>
+            ))
           )}
         </View>
 
@@ -476,5 +539,39 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 15,
     fontWeight: '600' as const,
+  },
+  trendBarGroup: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  trendBarsContainer: {
+    flexDirection: 'row',
+    gap: 4,
+    alignItems: 'flex-end',
+    width: '100%',
+  },
+  categoryCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.cardBackground,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 12,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  categoryAmount: {
+    fontSize: 18,
+    fontWeight: '700' as const,
   },
 });

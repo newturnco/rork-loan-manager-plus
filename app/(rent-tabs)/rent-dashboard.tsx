@@ -14,11 +14,9 @@ import NotificationBell from '@/components/NotificationBell';
 import {
   Home,
   Users,
-  TrendingUp,
   AlertCircle,
   Clock,
   Plus,
-  DollarSign,
   Building2,
   CheckCircle2,
   Wrench,
@@ -190,9 +188,21 @@ export default function RentDashboardScreen() {
           <Text style={styles.sectionTitle}>Financial Overview</Text>
           <View style={styles.financeGrid}>
             <View style={styles.financeCard}>
-              <Text style={styles.financeLabel}>Rent Collected</Text>
+              <Text style={styles.financeLabel}>Monthly Income</Text>
               <Text style={[styles.financeValue, { color: Colors.success }]}>
-                {formatCurrency(dashboardStats.totalRentCollected, currency.code, currency.symbol)}
+                {formatCurrency(dashboardStats.monthlyIncome, currency.code, currency.symbol)}
+              </Text>
+            </View>
+            <View style={styles.financeCard}>
+              <Text style={styles.financeLabel}>Monthly Expenses</Text>
+              <Text style={[styles.financeValue, { color: Colors.error }]}>
+                {formatCurrency(dashboardStats.monthlyExpenses, currency.code, currency.symbol)}
+              </Text>
+            </View>
+            <View style={[styles.financeCard, { borderWidth: 2, borderColor: dashboardStats.netIncome >= 0 ? Colors.success : Colors.error }]}>
+              <Text style={styles.financeLabel}>Net Income</Text>
+              <Text style={[styles.financeValue, { color: dashboardStats.netIncome >= 0 ? Colors.success : Colors.error }]}>
+                {formatCurrency(dashboardStats.netIncome, currency.code, currency.symbol)}
               </Text>
             </View>
             <View style={styles.financeCard}>
@@ -208,9 +218,9 @@ export default function RentDashboardScreen() {
               </Text>
             </View>
             <View style={styles.financeCard}>
-              <Text style={styles.financeLabel}>Monthly Income</Text>
+              <Text style={styles.financeLabel}>Total Collected</Text>
               <Text style={[styles.financeValue, { color: Colors.primary }]}>
-                {formatCurrency(dashboardStats.monthlyIncome, currency.code, currency.symbol)}
+                {formatCurrency(dashboardStats.totalRentCollected, currency.code, currency.symbol)}
               </Text>
             </View>
           </View>

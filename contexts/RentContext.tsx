@@ -9,6 +9,7 @@ import {
   RentPayment,
   MaintenanceRequest,
   RentDashboardStats,
+  PropertyExpense,
 } from '@/types/rent';
 
 const STORAGE_KEYS = {
@@ -17,6 +18,7 @@ const STORAGE_KEYS = {
   AGREEMENTS: 'rent_agreements',
   PAYMENTS: 'rent_payments',
   MAINTENANCE: 'rent_maintenance',
+  EXPENSES: 'rent_expenses',
 };
 
 export const [RentProvider, useRent] = createContextHook(() => {
@@ -25,18 +27,20 @@ export const [RentProvider, useRent] = createContextHook(() => {
   const [agreements, setAgreements] = useState<RentAgreement[]>([]);
   const [payments, setPayments] = useState<RentPayment[]>([]);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
+  const [expenses, setExpenses] = useState<PropertyExpense[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [propertiesData, tenantsData, agreementsData, paymentsData, maintenanceData] =
+      const [propertiesData, tenantsData, agreementsData, paymentsData, maintenanceData, expensesData] =
         await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.PROPERTIES),
           AsyncStorage.getItem(STORAGE_KEYS.TENANTS),
           AsyncStorage.getItem(STORAGE_KEYS.AGREEMENTS),
           AsyncStorage.getItem(STORAGE_KEYS.PAYMENTS),
           AsyncStorage.getItem(STORAGE_KEYS.MAINTENANCE),
+          AsyncStorage.getItem(STORAGE_KEYS.EXPENSES),
         ]);
 
       if (propertiesData) setProperties(JSON.parse(propertiesData));
@@ -44,6 +48,7 @@ export const [RentProvider, useRent] = createContextHook(() => {
       if (agreementsData) setAgreements(JSON.parse(agreementsData));
       if (paymentsData) setPayments(JSON.parse(paymentsData));
       if (maintenanceData) setMaintenanceRequests(JSON.parse(maintenanceData));
+      if (expensesData) setExpenses(JSON.parse(expensesData));
     } catch (error) {
       console.error('Error loading rent data:', error);
     } finally {
@@ -58,7 +63,7 @@ export const [RentProvider, useRent] = createContextHook(() => {
   const saveData = useCallback(
     async (
       key: string,
-      data: Property[] | Tenant[] | RentAgreement[] | RentPayment[] | MaintenanceRequest[],
+      data: Property[] | Tenant[] | RentAgreement[] | RentPayment[] | MaintenanceRequest[] | PropertyExpense[],
     ) => {
       try {
         await AsyncStorage.setItem(key, JSON.stringify(data));
@@ -281,6 +286,45 @@ export const [RentProvider, useRent] = createContextHook(() => {
     [saveData],
   );
 
+  const addExpense = useCallback(
+    (expense: Omit<PropertyExpense, 'id' | 'createdAt'>) => {
+      const newExpense: PropertyExpense = {
+        ...expense,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+      setExpenses((prev) => {
+        const updated = [...prev, newExpense];
+        void saveData(STORAGE_KEYS.EXPENSES, updated);
+        return updated;
+      });
+      return newExpense;
+    },
+    [saveData],
+  );
+
+  const updateExpense = useCallback(
+    (id: string, updates: Partial<PropertyExpense>) => {
+      setExpenses((prev) => {
+        const updated = prev.map((e) => (e.id === id ? { ...e, ...updates } : e));
+        void saveData(STORAGE_KEYS.EXPENSES, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
+  const deleteExpense = useCallback(
+    (id: string) => {
+      setExpenses((prev) => {
+        const updated = prev.filter((e) => e.id !== id);
+        void saveData(STORAGE_KEYS.EXPENSES, updated);
+        return updated;
+      });
+    },
+    [saveData],
+  );
+
   const clearAll = useCallback(async () => {
     try {
       setProperties([]);
@@ -288,12 +332,14 @@ export const [RentProvider, useRent] = createContextHook(() => {
       setAgreements([]);
       setPayments([]);
       setMaintenanceRequests([]);
+      setExpenses([]);
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.PROPERTIES,
         STORAGE_KEYS.TENANTS,
         STORAGE_KEYS.AGREEMENTS,
         STORAGE_KEYS.PAYMENTS,
         STORAGE_KEYS.MAINTENANCE,
+        STORAGE_KEYS.EXPENSES,
       ]);
     } catch (error) {
       console.error('Error clearing rent data:', error);
@@ -325,8 +371,17 @@ export const [RentProvider, useRent] = createContextHook(() => {
       if (p.status !== 'pending') return false;
       const dueDate = new Date(p.dueDate);
       return dueDate < now;
+    }).map((p) => {
+      const dueDate = new Date(p.dueDate);
+      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      const lateFeePerDay = (p.amount * 0.01);
+      const calculatedLateFee = Math.min(lateFeePerDay * daysOverdue, p.amount * 0.1);
+      return {
+        ...p,
+        lateFee: calculatedLateFee,
+      };
     });
-    const overdueRent = overduePayments.reduce((sum, p) => sum + (p.amount - p.paidAmount), 0);
+    const overdueRent = overduePayments.reduce((sum, p) => sum + (p.amount - p.paidAmount) + (p.lateFee || 0), 0);
 
     const monthlyIncome = paidPayments
       .filter((p) => {
@@ -334,6 +389,15 @@ export const [RentProvider, useRent] = createContextHook(() => {
         return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
       })
       .reduce((sum, p) => sum + p.paidAmount, 0);
+
+    const monthlyExpenses = expenses
+      .filter((e) => {
+        const expenseDate = new Date(e.date);
+        return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    const netIncome = monthlyIncome - monthlyExpenses;
 
     const upcomingRentPayments = payments
       .filter((p) => {
@@ -364,12 +428,14 @@ export const [RentProvider, useRent] = createContextHook(() => {
       pendingRent,
       overdueRent,
       monthlyIncome,
+      monthlyExpenses,
+      netIncome,
       upcomingRentPayments,
       overduePayments: overduePayments.slice(0, 5),
       maintenanceRequests: maintenanceRequests.filter((r) => r.status === 'pending').slice(0, 5),
       expiringAgreements,
     };
-  }, [properties, tenants, agreements, payments, maintenanceRequests]);
+  }, [properties, tenants, agreements, payments, maintenanceRequests, expenses]);
 
   const refreshAll = useCallback(async () => {
     await loadData();
@@ -382,6 +448,7 @@ export const [RentProvider, useRent] = createContextHook(() => {
       agreements,
       payments,
       maintenanceRequests,
+      expenses,
       isLoading,
       dashboardStats,
       addProperty,
@@ -399,6 +466,9 @@ export const [RentProvider, useRent] = createContextHook(() => {
       addMaintenanceRequest,
       updateMaintenanceRequest,
       deleteMaintenanceRequest,
+      addExpense,
+      updateExpense,
+      deleteExpense,
       refreshAll,
       clearAll,
     }),
@@ -408,6 +478,7 @@ export const [RentProvider, useRent] = createContextHook(() => {
       agreements,
       payments,
       maintenanceRequests,
+      expenses,
       isLoading,
       dashboardStats,
       addProperty,
@@ -425,6 +496,9 @@ export const [RentProvider, useRent] = createContextHook(() => {
       addMaintenanceRequest,
       updateMaintenanceRequest,
       deleteMaintenanceRequest,
+      addExpense,
+      updateExpense,
+      deleteExpense,
       refreshAll,
       clearAll,
     ],

@@ -106,6 +106,28 @@ export interface MaintenanceRequest {
   completedAt?: string;
 }
 
+export interface PropertyExpense {
+  id: string;
+  propertyId: string;
+  category: string;
+  amount: number;
+  date: string;
+  description: string;
+  vendor?: string;
+  receipt?: string;
+  recurring?: boolean;
+  createdAt: string;
+}
+
+export interface PropertyDocument {
+  id: string;
+  propertyId: string;
+  type: string;
+  name: string;
+  url: string;
+  uploadDate: string;
+}
+
 export interface RentDashboardStats {
   totalProperties: number;
   occupiedProperties: number;
@@ -116,6 +138,8 @@ export interface RentDashboardStats {
   pendingRent: number;
   overdueRent: number;
   monthlyIncome: number;
+  monthlyExpenses: number;
+  netIncome: number;
   upcomingRentPayments: RentPayment[];
   overduePayments: RentPayment[];
   maintenanceRequests: MaintenanceRequest[];

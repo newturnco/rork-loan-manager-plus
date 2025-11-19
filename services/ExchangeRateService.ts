@@ -13,9 +13,14 @@ interface CachedExchangeRates {
 }
 
 const CACHE_KEY_PREFIX = '@exchange-rates:';
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const PRIMARY_API_URL = 'https://api.exchangerate-api.com/v4/latest';
-const BACKUP_API_URL = 'https://open.er-api.com/v6/latest';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const MANUAL_RATE_KEY = '@manual-exchange-rates';
+
+const API_ENDPOINTS = [
+  'https://api.exchangerate-api.com/v4/latest',
+  'https://open.er-api.com/v6/latest',
+  'https://api.frankfurter.app/latest',
+];
 
 const mapRatesToSupported = (
   rates: Record<string, number>,
@@ -137,6 +142,32 @@ const getFallbackRates = (
   };
 };
 
+const getManualRates = async (base: string): Promise<Record<string, number> | null> => {
+  try {
+    const stored = await AsyncStorage.getItem(MANUAL_RATE_KEY);
+    if (!stored) {
+      return null;
+    }
+    const parsed = JSON.parse(stored);
+    return parsed[base] || null;
+  } catch (error) {
+    console.log('Failed to read manual exchange rates', error);
+    return null;
+  }
+};
+
+export const setManualRates = async (base: string, rates: Record<string, number>) => {
+  try {
+    const stored = await AsyncStorage.getItem(MANUAL_RATE_KEY);
+    const existing = stored ? JSON.parse(stored) : {};
+    existing[base] = rates;
+    await AsyncStorage.setItem(MANUAL_RATE_KEY, JSON.stringify(existing));
+    console.log('Manual exchange rates set for', base);
+  } catch (error) {
+    console.error('Failed to set manual exchange rates', error);
+  }
+};
+
 export const getExchangeRates = async (
   base: string,
   supportedCodes: string[],
@@ -148,23 +179,30 @@ export const getExchangeRates = async (
     return cached.payload;
   }
 
-  const liveFromPrimary = await fetchFromEndpoint(PRIMARY_API_URL, base, supportedCodes);
-
-  if (liveFromPrimary) {
-    await persistRates(base, liveFromPrimary);
-    return liveFromPrimary;
-  }
-
-  const liveFromBackup = await fetchFromEndpoint(BACKUP_API_URL, base, supportedCodes);
-
-  if (liveFromBackup) {
-    await persistRates(base, liveFromBackup);
-    return liveFromBackup;
+  for (const endpoint of API_ENDPOINTS) {
+    const liveData = await fetchFromEndpoint(endpoint, base, supportedCodes);
+    if (liveData) {
+      await persistRates(base, liveData);
+      return liveData;
+    }
   }
 
   if (cached) {
     console.log('Using stale cached exchange rates for', base);
     return cached.payload;
+  }
+
+  const manualRates = await getManualRates(base);
+  if (manualRates) {
+    const mappedManual = mapRatesToSupported(manualRates, supportedCodes, base);
+    const manualData = {
+      base,
+      date: new Date().toISOString(),
+      rates: mappedManual,
+    };
+    console.log('Using manual exchange rates for', base);
+    await persistRates(base, manualData);
+    return manualData;
   }
 
   const fallback = getFallbackRates(base, supportedCodes);
