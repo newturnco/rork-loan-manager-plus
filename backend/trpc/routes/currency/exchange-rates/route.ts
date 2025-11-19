@@ -53,12 +53,13 @@ const FALLBACK_RATES: Record<string, Record<string, number>> = {
 };
 
 const API_ENDPOINTS = [
+  'https://api.exchangerate.host/latest',
+  'https://api.frankfurter.app/latest',
   'https://api.exchangerate-api.com/v4/latest',
   'https://open.er-api.com/v6/latest',
-  'https://api.frankfurter.app/latest',
 ];
 
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 15000;
 
 async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();

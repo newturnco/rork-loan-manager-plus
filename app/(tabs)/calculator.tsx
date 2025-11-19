@@ -17,7 +17,7 @@ import { useResponsive } from '@/utils/responsive';
 import Colors from '@/constants/colors';
 
 export default function CalculatorScreen() {
-  const { currency: defaultCurrency, exchangeRates } = useCurrency();
+  const { currency: defaultCurrency, exchangeRates, isLoadingRates, ratesError, ratesSource } = useCurrency();
   const { contentMaxWidth, horizontalPadding } = useResponsive();
   
   const [amount, setAmount] = useState('');
@@ -137,10 +137,19 @@ export default function CalculatorScreen() {
           </Text>
         </View>
 
-        {lastUpdated && (
+        {isLoadingRates ? (
+          <View style={styles.infoCard}>
+            <ActivityIndicator color={Colors.info} size="small" />
+            <Text style={styles.infoText}>Loading exchange rates...</Text>
+          </View>
+        ) : ratesError ? (
+          <View style={[styles.infoCard, { backgroundColor: Colors.warning + '15' }]}>
+            <Text style={[styles.infoText, { color: Colors.warning }]}>Using offline rates (API unavailable)</Text>
+          </View>
+        ) : lastUpdated && (
           <View style={styles.infoCard}>
             <RefreshCw color={Colors.info} size={16} />
-            <Text style={styles.infoText}>Last updated: {lastUpdated}</Text>
+            <Text style={styles.infoText}>Last updated: {lastUpdated} {ratesSource === 'fallback' ? '(Offline)' : '(Live)'}</Text>
           </View>
         )}
 
@@ -256,11 +265,12 @@ export default function CalculatorScreen() {
                 );
               })}
             </View>
-          ) : (
+          ) : isLoadingRates ? (
             <View style={styles.infoCard}>
+              <ActivityIndicator color={Colors.info} size="small" />
               <Text style={styles.infoText}>Loading exchange rates...</Text>
             </View>
-          )}
+          ) : null}
         </View>
       </ScrollView>
 
