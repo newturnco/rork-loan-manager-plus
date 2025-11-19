@@ -368,20 +368,25 @@ export const [RentProvider, useRent] = createContextHook(() => {
     );
 
     const overduePayments = payments.filter((p) => {
-      if (p.status !== 'pending') return false;
+      if (p.status === 'paid') return false;
       const dueDate = new Date(p.dueDate);
       return dueDate < now;
     }).map((p) => {
       const dueDate = new Date(p.dueDate);
       const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const lateFeePerDay = (p.amount * 0.01);
+      const lateFeePerDay = p.amount * 0.01;
       const calculatedLateFee = Math.min(lateFeePerDay * daysOverdue, p.amount * 0.1);
+      const actualLateFee = p.lateFee !== undefined ? p.lateFee : calculatedLateFee;
       return {
         ...p,
-        lateFee: calculatedLateFee,
+        lateFee: actualLateFee,
       };
     });
-    const overdueRent = overduePayments.reduce((sum, p) => sum + (p.amount - p.paidAmount) + (p.lateFee || 0), 0);
+    const overdueRent = overduePayments.reduce((sum, p) => {
+      const unpaid = p.amount - p.paidAmount;
+      const fee = p.lateFee || 0;
+      return sum + unpaid + fee;
+    }, 0);
 
     const monthlyIncome = paidPayments
       .filter((p) => {

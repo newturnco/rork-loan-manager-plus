@@ -52,60 +52,91 @@ const FALLBACK_RATES: Record<string, Record<string, number>> = {
   },
 };
 
-const PRIMARY_API_URL = 'https://api.exchangerate-api.com/v4/latest';
-const BACKUP_API_URL = 'https://open.er-api.com/v6/latest';
+const API_ENDPOINTS = [
+  'https://api.exchangerate-api.com/v4/latest',
+  'https://open.er-api.com/v6/latest',
+  'https://api.frankfurter.app/latest',
+];
+
+const TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
 
 export const getExchangeRatesProcedure = publicProcedure
   .input(
     z.object({
       baseCurrency: z.string(),
+      supportedCurrencies: z.array(z.string()).optional(),
     })
   )
   .query(async ({ input }) => {
-    try {
-      const response = await fetch(`${PRIMARY_API_URL}/${input.baseCurrency}`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          base: data.base,
-          date: data.date,
-          rates: data.rates as Record<string, number>,
-        };
+    console.log('[Backend] Fetching exchange rates for', input.baseCurrency);
+    
+    for (const endpoint of API_ENDPOINTS) {
+      try {
+        const response = await fetchWithTimeout(`${endpoint}/${input.baseCurrency}`, TIMEOUT_MS);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const base = data.base || data.base_code || input.baseCurrency;
+          const date = data.date || data.time_last_update_utc || new Date().toISOString().split('T')[0];
+          const rates = data.rates as Record<string, number>;
+          
+          if (rates && Object.keys(rates).length > 0) {
+            console.log('[Backend] Successfully fetched rates from', endpoint);
+            
+            let filteredRates = rates;
+            if (input.supportedCurrencies && input.supportedCurrencies.length > 0) {
+              filteredRates = {};
+              input.supportedCurrencies.forEach((currency) => {
+                if (currency === base) {
+                  filteredRates[currency] = 1;
+                } else if (rates[currency]) {
+                  filteredRates[currency] = rates[currency];
+                }
+              });
+            }
+            
+            return {
+              base,
+              date,
+              rates: filteredRates,
+              source: 'live',
+            };
+          }
+        }
+      } catch (error) {
+        console.log(`[Backend] Failed to fetch from ${endpoint}:`, error instanceof Error ? error.message : 'Unknown error');
       }
-    } catch (error) {
-      console.log('Primary API failed, trying backup:', error);
-    }
-
-    try {
-      const response = await fetch(`${BACKUP_API_URL}/${input.baseCurrency}`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          base: data.base_code || data.base,
-          date: data.time_last_update_utc || new Date().toISOString(),
-          rates: data.rates as Record<string, number>,
-        };
-      }
-    } catch (error) {
-      console.log('Backup API failed, using fallback rates:', error);
     }
 
     if (FALLBACK_RATES[input.baseCurrency]) {
-      console.log('Using fallback exchange rates for', input.baseCurrency);
+      console.log('[Backend] Using fallback exchange rates for', input.baseCurrency);
       return {
         base: input.baseCurrency,
         date: new Date().toISOString().split('T')[0],
         rates: FALLBACK_RATES[input.baseCurrency],
+        source: 'fallback',
       };
     }
 
-    throw new Error('Failed to fetch exchange rates from all sources');
+    console.error('[Backend] Failed to fetch exchange rates from all sources');
+    throw new Error(`Exchange rates unavailable for ${input.baseCurrency}`);
   });
 
 export const convertCurrencyProcedure = publicProcedure
@@ -117,66 +148,57 @@ export const convertCurrencyProcedure = publicProcedure
     })
   )
   .query(async ({ input }) => {
-    try {
-      if (input.fromCurrency === input.toCurrency) {
-        return {
-          originalAmount: input.amount,
-          convertedAmount: input.amount,
-          rate: 1,
-          fromCurrency: input.fromCurrency,
-          toCurrency: input.toCurrency,
-        };
-      }
+    console.log('[Backend] Converting', input.amount, 'from', input.fromCurrency, 'to', input.toCurrency);
+    
+    if (input.fromCurrency === input.toCurrency) {
+      return {
+        originalAmount: input.amount,
+        convertedAmount: input.amount,
+        rate: 1,
+        fromCurrency: input.fromCurrency,
+        toCurrency: input.toCurrency,
+        source: 'same-currency',
+      };
+    }
 
-      let rate: number | undefined;
+    let rate: number | undefined;
+    let source = 'live';
 
+    for (const endpoint of API_ENDPOINTS) {
       try {
-        const response = await fetch(`${PRIMARY_API_URL}/${input.fromCurrency}`, {
-          headers: { 'Accept': 'application/json' },
-        });
+        const response = await fetchWithTimeout(`${endpoint}/${input.fromCurrency}`, TIMEOUT_MS);
         
         if (response.ok) {
           const data = await response.json();
-          rate = data.rates[input.toCurrency];
+          rate = data.rates?.[input.toCurrency];
+          if (rate) {
+            console.log('[Backend] Got conversion rate from', endpoint);
+            break;
+          }
         }
       } catch (error) {
-        console.log('Primary API failed for conversion:', error);
+        console.log(`[Backend] Failed conversion from ${endpoint}:`, error instanceof Error ? error.message : 'Unknown error');
       }
-
-      if (!rate) {
-        try {
-          const response = await fetch(`${BACKUP_API_URL}/${input.fromCurrency}`, {
-            headers: { 'Accept': 'application/json' },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            rate = data.rates[input.toCurrency];
-          }
-        } catch (error) {
-          console.log('Backup API failed for conversion:', error);
-        }
-      }
-
-      if (!rate && FALLBACK_RATES[input.fromCurrency]) {
-        rate = FALLBACK_RATES[input.fromCurrency][input.toCurrency];
-      }
-      
-      if (!rate) {
-        throw new Error(`Exchange rate not found for ${input.toCurrency}`);
-      }
-
-      const convertedAmount = input.amount * rate;
-      
-      return {
-        originalAmount: input.amount,
-        convertedAmount: Math.round(convertedAmount * 100) / 100,
-        rate,
-        fromCurrency: input.fromCurrency,
-        toCurrency: input.toCurrency,
-      };
-    } catch (error) {
-      console.error('Error converting currency:', error);
-      throw new Error('Failed to convert currency');
     }
+
+    if (!rate && FALLBACK_RATES[input.fromCurrency]) {
+      rate = FALLBACK_RATES[input.fromCurrency][input.toCurrency];
+      source = 'fallback';
+      console.log('[Backend] Using fallback rate for conversion');
+    }
+    
+    if (!rate) {
+      throw new Error(`Exchange rate not found for ${input.fromCurrency} to ${input.toCurrency}`);
+    }
+
+    const convertedAmount = Math.round(input.amount * rate * 100) / 100;
+    
+    return {
+      originalAmount: input.amount,
+      convertedAmount,
+      rate,
+      fromCurrency: input.fromCurrency,
+      toCurrency: input.toCurrency,
+      source,
+    };
   });
