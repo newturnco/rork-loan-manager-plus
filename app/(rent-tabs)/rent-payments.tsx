@@ -16,6 +16,8 @@ import {
   MessageCircle,
   Plus,
   CheckCircle2,
+  Trash2,
+  MoreVertical,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
@@ -27,9 +29,10 @@ import { useResponsive } from '@/utils/responsive';
 export default function RentPaymentsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { payments, tenants, properties, agreements } = useRent();
+  const { payments, tenants, properties, agreements, deletePayment, updatePayment } = useRent();
   const { currency } = useCurrency();
   const { contentMaxWidth, horizontalPadding, isTablet } = useResponsive();
+  const [menuVisible, setMenuVisible] = React.useState<string | null>(null);
 
   const summaries = React.useMemo(() => {
     const collected = payments
@@ -69,6 +72,33 @@ export default function RentPaymentsScreen() {
     [payments],
   );
 
+  const handleDeletePayment = React.useCallback((paymentId: string) => {
+    setMenuVisible(null);
+    Alert.alert(
+      'Delete Payment',
+      'Are you sure you want to delete this payment record?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deletePayment(paymentId);
+          },
+        },
+      ]
+    );
+  }, [deletePayment]);
+
+  const handleMarkAsPaid = React.useCallback((paymentId: string, amount: number) => {
+    setMenuVisible(null);
+    updatePayment(paymentId, {
+      status: 'paid',
+      paidAmount: amount,
+      paymentDate: new Date().toISOString(),
+    });
+  }, [updatePayment]);
+
   const handleWhatsApp = React.useCallback((tenantPhone: string, message: string) => {
     const sanitized = tenantPhone.replace(/[^0-9]/g, '');
     if (!sanitized) {
@@ -95,6 +125,37 @@ export default function RentPaymentsScreen() {
 
       return (
         <View style={styles.paymentCard} key={payment.id} testID={`payment-card-${payment.id}`}>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              setMenuVisible(menuVisible === payment.id ? null : payment.id);
+            }}
+            style={styles.menuButton}
+          >
+            <MoreVertical color={Colors.textSecondary} size={20} />
+          </TouchableOpacity>
+
+          {menuVisible === payment.id && (
+            <View style={styles.actionsMenu}>
+              {payment.status !== 'paid' && (
+                <TouchableOpacity
+                  style={styles.actionItem}
+                  onPress={() => handleMarkAsPaid(payment.id, payment.amount)}
+                >
+                  <CheckCircle2 color={Colors.success} size={18} />
+                  <Text style={styles.actionText}>Mark as Paid</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.actionItem}
+                onPress={() => handleDeletePayment(payment.id)}
+              >
+                <Trash2 color={Colors.error} size={18} />
+                <Text style={[styles.actionText, { color: Colors.error }]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.paymentHeader}>
             <View style={styles.paymentTitleBlock}>
               <Text style={styles.paymentTenant}>{tenant?.name ?? 'Tenant'}</Text>
@@ -158,7 +219,7 @@ export default function RentPaymentsScreen() {
         </View>
       );
     },
-    [agreements, currency.code, currency.symbol, handleWhatsApp, properties, router, tenants],
+    [agreements, currency.code, currency.symbol, handleWhatsApp, properties, router, tenants, menuVisible, handleDeletePayment, handleMarkAsPaid],
   );
 
   return (
@@ -441,5 +502,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600' as const,
     color: Colors.primary,
+  },
+  menuButton: {
+    alignSelf: 'flex-end',
+    padding: 4,
+    marginBottom: 8,
+  },
+  actionsMenu: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
 });

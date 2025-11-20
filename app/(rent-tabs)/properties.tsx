@@ -1,14 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Home, Plus, MapPin, Bed, Bath } from 'lucide-react-native';
+import { Home, Plus, MapPin, Bed, Bath, Edit2, Trash2, MoreVertical } from 'lucide-react-native';
 import { useRent } from '@/contexts/RentContext';
 import Colors from '@/constants/colors';
 import { Property } from '@/types/rent';
 
 export default function PropertiesScreen() {
   const router = useRouter();
-  const { properties } = useRent();
+  const { properties, deleteProperty } = useRent();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -23,8 +23,33 @@ export default function PropertiesScreen() {
     }
   };
 
+  const [menuVisible, setMenuVisible] = useState<string | null>(null);
+
+  const handleEdit = (propertyId: string) => {
+    setMenuVisible(null);
+    router.push(`/edit-property?id=${propertyId}`);
+  };
+
+  const handleDelete = (propertyId: string, propertyName: string) => {
+    setMenuVisible(null);
+    Alert.alert(
+      'Delete Property',
+      `Are you sure you want to delete "${propertyName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteProperty(propertyId);
+          },
+        },
+      ]
+    );
+  };
+
   const renderProperty = ({ item }: { item: Property }) => (
-    <TouchableOpacity style={styles.propertyCard} onPress={() => {}}>
+    <TouchableOpacity style={styles.propertyCard} onPress={() => handleEdit(item.id)}>
       <View style={styles.propertyHeader}>
         <View style={styles.propertyIcon}>
           <Home color={Colors.primary} size={24} />
@@ -36,12 +61,43 @@ export default function PropertiesScreen() {
             <Text style={styles.propertyAddress}>{item.address}</Text>
           </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-            {item.status.toUpperCase()}
-          </Text>
+        <View style={styles.propertyHeaderActions}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+              {item.status.toUpperCase()}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              setMenuVisible(menuVisible === item.id ? null : item.id);
+            }}
+            style={styles.menuButton}
+          >
+            <MoreVertical color={Colors.textSecondary} size={20} />
+          </TouchableOpacity>
         </View>
       </View>
+
+      {menuVisible === item.id && (
+        <View style={styles.actionsMenu}>
+          <TouchableOpacity
+            style={styles.actionItem}
+            onPress={() => handleEdit(item.id)}
+          >
+            <Edit2 color={Colors.primary} size={18} />
+            <Text style={styles.actionText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionItem}
+            onPress={() => handleDelete(item.id, item.name)}
+          >
+            <Trash2 color={Colors.error} size={18} />
+            <Text style={[styles.actionText, { color: Colors.error }]}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {(item.bedrooms || item.bathrooms) && (
         <View style={styles.propertyDetails}>
           {item.bedrooms && (
@@ -203,5 +259,34 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600' as const,
+  },
+  propertyHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  menuButton: {
+    padding: 4,
+  },
+  actionsMenu: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  actionText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
   },
 });

@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { ArrowRightLeft, RefreshCw, DollarSign, TrendingUp } from 'lucide-react-native';
+import { ArrowRightLeft, RefreshCw, DollarSign, TrendingUp, AlertCircle } from 'lucide-react-native';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
 import { useResponsive } from '@/utils/responsive';
 import Colors from '@/constants/colors';
@@ -144,7 +144,13 @@ export default function CalculatorScreen() {
           </View>
         ) : ratesError ? (
           <View style={[styles.infoCard, { backgroundColor: Colors.warning + '15' }]}>
-            <Text style={[styles.infoText, { color: Colors.warning }]}>Using offline rates (API unavailable)</Text>
+            <AlertCircle color={Colors.warning} size={16} />
+            <Text style={[styles.infoText, { color: Colors.warning }]}>Using fallback rates (Live API unavailable)</Text>
+          </View>
+        ) : ratesSource === 'fallback' ? (
+          <View style={[styles.infoCard, { backgroundColor: Colors.info + '15' }]}>
+            <RefreshCw color={Colors.info} size={16} />
+            <Text style={styles.infoText}>Using fallback rates · {lastUpdated}</Text>
           </View>
         ) : lastUpdated && (
           <View style={styles.infoCard}>

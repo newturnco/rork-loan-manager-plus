@@ -20,6 +20,9 @@ import {
   AlertCircle,
   Calendar,
   Building2,
+  Edit2,
+  Trash2,
+  MoreVertical,
 } from 'lucide-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
@@ -31,9 +34,10 @@ import { useResponsive } from '@/utils/responsive';
 export default function RentTenantsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tenants, agreements, payments, properties } = useRent();
+  const { tenants, agreements, payments, properties, deleteTenant } = useRent();
   const { currency } = useCurrency();
   const { contentMaxWidth, horizontalPadding, isTablet } = useResponsive();
+  const [menuVisible, setMenuVisible] = React.useState<string | null>(null);
 
   const tenantInsights = React.useMemo(() => {
     const activeContracts = agreements.filter((agreement) => agreement.status === 'active');
@@ -46,6 +50,29 @@ export default function RentTenantsScreen() {
       pendingInvoices: pendingPayments.length,
     };
   }, [agreements, payments, tenants.length]);
+
+  const handleEditTenant = React.useCallback((tenantId: string) => {
+    setMenuVisible(null);
+    router.push(`/edit-tenant?id=${tenantId}`);
+  }, [router]);
+
+  const handleDeleteTenant = React.useCallback((tenantId: string, tenantName: string) => {
+    setMenuVisible(null);
+    Alert.alert(
+      'Delete Tenant',
+      `Are you sure you want to delete "${tenantName}"? This will not delete their payment history.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteTenant(tenantId);
+          },
+        },
+      ]
+    );
+  }, [deleteTenant]);
 
   const handleWhatsApp = React.useCallback(
     (phone: string, message: string) => {
@@ -99,14 +126,35 @@ export default function RentTenantsScreen() {
               {item.email ? <Text style={styles.tenantEmail}>{item.email}</Text> : null}
             </View>
             <TouchableOpacity
-              style={styles.whatsAppButton}
-              onPress={() => handleWhatsApp(item.phone, reminderMessage)}
-              activeOpacity={0.85}
-              testID={`tenant-whatsapp-${item.id}`}
+              onPress={(e) => {
+                e.stopPropagation();
+                setMenuVisible(menuVisible === item.id ? null : item.id);
+              }}
+              style={styles.menuButton}
+              testID={`tenant-menu-${item.id}`}
             >
-              <MessageCircle color="#FFFFFF" size={20} />
+              <MoreVertical color={Colors.textSecondary} size={20} />
             </TouchableOpacity>
           </View>
+
+          {menuVisible === item.id && (
+            <View style={styles.actionsMenu}>
+              <TouchableOpacity
+                style={styles.actionItem}
+                onPress={() => handleEditTenant(item.id)}
+              >
+                <Edit2 color={Colors.primary} size={18} />
+                <Text style={styles.actionText}>Edit Tenant</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionItem}
+                onPress={() => handleDeleteTenant(item.id, item.name)}
+              >
+                <Trash2 color={Colors.error} size={18} />
+                <Text style={[styles.actionText, { color: Colors.error }]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.divider} />
 
@@ -195,7 +243,7 @@ export default function RentTenantsScreen() {
         </View>
       );
     },
-    [agreements, currency.code, currency.symbol, handleWhatsApp, payments, properties, router],
+    [agreements, currency.code, currency.symbol, handleWhatsApp, payments, properties, router, menuVisible, handleEditTenant, handleDeleteTenant],
   );
 
   return (
@@ -396,13 +444,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.info,
   },
-  whatsAppButton: {
-    width: 44,
-    height: 44,
+  menuButton: {
+    padding: 8,
+  },
+  actionsMenu: {
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
-    backgroundColor: Colors.success,
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  actionItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  actionText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
   },
   divider: {
     height: 1,
