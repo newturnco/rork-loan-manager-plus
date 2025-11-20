@@ -53,10 +53,9 @@ const FALLBACK_RATES: Record<string, Record<string, number>> = {
 };
 
 const API_ENDPOINTS = [
+  'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies',
+  'https://api.frankfurter.dev/latest',
   'https://api.exchangerate.host/latest',
-  'https://api.frankfurter.app/latest',
-  'https://api.exchangerate-api.com/v4/latest',
-  'https://open.er-api.com/v6/latest',
 ];
 
 const TIMEOUT_MS = 15000;
@@ -88,15 +87,42 @@ export const getExchangeRatesProcedure = publicProcedure
   .query(async ({ input }) => {
     console.log('[Backend] Fetching exchange rates for', input.baseCurrency);
     
-    for (const endpoint of API_ENDPOINTS) {
+    for (let i = 0; i < API_ENDPOINTS.length; i++) {
+      const endpoint = API_ENDPOINTS[i];
       try {
-        const response = await fetchWithTimeout(`${endpoint}/${input.baseCurrency}`, TIMEOUT_MS);
+        let url: string;
+        let isCustomAPI = false;
+        
+        if (endpoint.includes('jsdelivr')) {
+          url = `${endpoint}/${input.baseCurrency.toLowerCase()}.json`;
+          isCustomAPI = true;
+        } else {
+          url = `${endpoint}?base=${input.baseCurrency}`;
+        }
+        
+        const response = await fetchWithTimeout(url, TIMEOUT_MS);
         
         if (response.ok) {
           const data = await response.json();
-          const base = data.base || data.base_code || input.baseCurrency;
-          const date = data.date || data.time_last_update_utc || new Date().toISOString().split('T')[0];
-          const rates = data.rates as Record<string, number>;
+          let base: string;
+          let date: string;
+          let rates: Record<string, number>;
+          
+          if (isCustomAPI) {
+            base = input.baseCurrency.toUpperCase();
+            date = data.date || new Date().toISOString().split('T')[0];
+            rates = data[input.baseCurrency.toLowerCase()] || {};
+            
+            const uppercasedRates: Record<string, number> = {};
+            for (const [key, value] of Object.entries(rates)) {
+              uppercasedRates[key.toUpperCase()] = value as number;
+            }
+            rates = uppercasedRates;
+          } else {
+            base = data.base || data.base_code || input.baseCurrency;
+            date = data.date || data.time_last_update_utc || new Date().toISOString().split('T')[0];
+            rates = data.rates as Record<string, number>;
+          }
           
           if (rates && Object.keys(rates).length > 0) {
             console.log('[Backend] Successfully fetched rates from', endpoint);
@@ -111,6 +137,10 @@ export const getExchangeRatesProcedure = publicProcedure
                   filteredRates[currency] = rates[currency];
                 }
               });
+            }
+            
+            if (!filteredRates[base]) {
+              filteredRates[base] = 1;
             }
             
             return {
@@ -165,13 +195,31 @@ export const convertCurrencyProcedure = publicProcedure
     let rate: number | undefined;
     let source = 'live';
 
-    for (const endpoint of API_ENDPOINTS) {
+    for (let i = 0; i < API_ENDPOINTS.length; i++) {
+      const endpoint = API_ENDPOINTS[i];
       try {
-        const response = await fetchWithTimeout(`${endpoint}/${input.fromCurrency}`, TIMEOUT_MS);
+        let url: string;
+        let isCustomAPI = false;
+        
+        if (endpoint.includes('jsdelivr')) {
+          url = `${endpoint}/${input.fromCurrency.toLowerCase()}.json`;
+          isCustomAPI = true;
+        } else {
+          url = `${endpoint}?base=${input.fromCurrency}`;
+        }
+        
+        const response = await fetchWithTimeout(url, TIMEOUT_MS);
         
         if (response.ok) {
           const data = await response.json();
-          rate = data.rates?.[input.toCurrency];
+          
+          if (isCustomAPI) {
+            const rates = data[input.fromCurrency.toLowerCase()] || {};
+            rate = rates[input.toCurrency.toLowerCase()];
+          } else {
+            rate = data.rates?.[input.toCurrency];
+          }
+          
           if (rate) {
             console.log('[Backend] Got conversion rate from', endpoint);
             break;
